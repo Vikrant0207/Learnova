@@ -42,9 +42,11 @@ export function Navbar() {
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
+      const progress = Math.min(window.scrollY / 100, 1);
+      setScrollProgress(progress);
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -181,8 +183,9 @@ export function Navbar() {
 
   return (
     <>
-      {/* Premium gradient background overlay */}
-      <div className="fixed w-full top-0 z-51 h-20 bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
+      {/* Premium gradient background overlay - Fades out as we scroll down to let glassmorphism shine */}
+      <div className="fixed w-full top-0 z-[60] h-24 bg-gradient-to-b from-black/60 via-black/10 to-transparent pointer-events-none transition-opacity duration-300" 
+           style={{ opacity: 1 - scrollProgress * 0.5 }} />
 
       <nav
         className={`fixed w-full top-0 z-52 transition-all duration-100 ease-in-out ${scrolled
@@ -245,8 +248,8 @@ export function Navbar() {
               })}
               {/* Enhanced Auth Section */}
               {isAuthenticated ? (
-                <div className="flex items-center space-x-4 ml-6">
-                  <Link href="/attendance">
+                <div className="flex items-center space-x-2 md:space-x-4 ml-2 md:ml-6">
+                  <Link href="/attendance" className="hidden md:block">
                     <Button className="relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
                       <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <span className="relative flex items-center">
@@ -255,7 +258,7 @@ export function Navbar() {
                       </span>
                     </Button>
                   </Link>
-                  <Link href="/notices">
+                  <Link href="/notices" className="hidden lg:block">
                     <Button className="relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
                       <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <span className="relative flex items-center">
@@ -300,7 +303,7 @@ export function Navbar() {
                         </div>
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-black animate-pulse" />
                       </div>
-                      <div className="hidden lg:block">
+                      <div className="hidden md:block">
                         <p className="text-sm font-medium">
                           {getUserDisplayName()}
                         </p>
@@ -390,7 +393,7 @@ export function Navbar() {
                   </div>
                 </div>
               ) : (
-                <div className="ml-6">
+                <div className="ml-2 md:ml-6">
                   <Link href="/auth">
                     <Button className="relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
                       <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -404,8 +407,8 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Enhanced Mobile menu button with User Logo */}
-            <div className="lg:hidden flex items-center space-x-3">
+            {/* Enhanced Mobile menu button with User Logo - FIXED: Changed breakpoint to sm:hidden */}
+            <div className="sm:hidden flex items-center space-x-3">
               {isAuthenticated && (
                 <div className="relative">
                   <div className="w-9 h-9 relative">

@@ -26,8 +26,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 
+import { useAuth } from "@/hooks/useAuth";
+import { logActivity } from "@/services/activityService";
+
 export default function ActivityPage() {
+  const { user } = useAuth();
   const [scrollY, setScrollY] = useState(0);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
 
@@ -190,6 +195,23 @@ export default function ActivityPage() {
     return categoryMatch && levelMatch;
   });
 
+  const handleStartActivity = async (activity) => {
+    if (!user) {
+      alert("Please log in to track your learning progress!");
+      return;
+    }
+
+    // Log the activity to the database
+    await logActivity(user.uid, {
+      title: activity.title,
+      type: activity.type || "course",
+      progress: 0,
+    });
+
+    // Here add logic to actually open the quiz/game
+    alert(`Started ${activity.title}! Progress is now being tracked.`);
+  };
+
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case "Beginner":
@@ -283,72 +305,7 @@ export default function ActivityPage() {
           </div>
         </section>
 
-        {/* Filters Section */}
-        <section className="px-4 sm:px-6 lg:px-8 mb-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-              <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-white flex items-center">
-                  <Filter className="w-5 h-5 mr-2 text-accent" />
-                  Filter Activities
-                </h3>
-                <div className="flex items-center space-x-2 bg-black/30 rounded-full px-4 py-2 border border-white/10">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search activities..."
-                    className="bg-transparent text-white placeholder-gray-400 outline-none"
-                  />
-                </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Category Filter */}
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-3 block">
-                    Subject Category
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 ${selectedCategory === category.id
-                          ? "bg-gradient-to-r from-accent to-purple-500 text-white"
-                          : "bg-black/30 text-gray-300 hover:bg-black/50 hover:text-white border border-white/10"
-                          }`}
-                      >
-                        <category.icon className="w-4 h-4 mr-2" />
-                        {category.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Level Filter */}
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-3 block">
-                    Education Level
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {levels.map((level) => (
-                      <button
-                        key={level.id}
-                        onClick={() => setSelectedLevel(level.id)}
-                        className={`px-4 py-2 rounded-full transition-all duration-300 ${selectedLevel === level.id
-                          ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
-                          : "bg-black/30 text-gray-300 hover:bg-black/50 hover:text-white border border-white/10"
-                          }`}
-                      >
-                        {level.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Featured Activities */}
         <section className="px-4 sm:px-6 lg:px-8 mb-16">
@@ -423,6 +380,7 @@ export default function ActivityPage() {
                     </div>
 
                     <Button
+                      onClick={() => handleStartActivity(activity)}
                       className={`w-full bg-gradient-to-r ${activity.gradient} hover:shadow-lg hover:shadow-accent/25 transition-all duration-300 group-hover:scale-[1.02]`}
                     >
                       <Play className="w-4 h-4 mr-2" />
@@ -432,6 +390,73 @@ export default function ActivityPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Filters Section */}
+        <section className="px-4 sm:px-6 lg:px-8 mb-12">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-white/10">
+              <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <Filter className="w-5 h-5 mr-2 text-accent" />
+                  Filter Activities
+                </h3>
+                <div className="w-full sm:w-auto flex items-center space-x-2 bg-black/30 rounded-full px-4 py-2 border border-white/10">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search activities..."
+                    className="bg-transparent text-white placeholder-gray-400 outline-none w-full text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Category Filter */}
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-3 block">
+                    Subject Category
+                  </label>
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`flex items-center justify-center px-3 py-2 min-h-[42px] text-xs sm:text-sm rounded-full whitespace-nowrap transition-all duration-300 ${selectedCategory === category.id
+                          ? "bg-gradient-to-r from-accent to-purple-500 text-white"
+                          : "bg-black/30 text-gray-300 hover:bg-black/50 hover:text-white border border-white/10"
+                          }`}
+                      >
+                        <category.icon className="w-4 h-4 mr-2" />
+                        {category.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Level Filter */}
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-3 block">
+                    Education Level
+                  </label>
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                    {levels.map((level) => (
+                      <button
+                        key={level.id}
+                        onClick={() => setSelectedLevel(level.id)}
+                        className={`px-4 py-2 rounded-full transition-all duration-300 ${selectedLevel === level.id
+                          ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+                          : "bg-black/30 text-gray-300 hover:bg-black/50 hover:text-white border border-white/10"
+                          }`}
+                      >
+                        {level.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -517,6 +542,7 @@ export default function ActivityPage() {
 
                     <Button
                       size="sm"
+                      onClick={() => handleStartActivity(activity)}
                       className={`w-full bg-gradient-to-r ${activity.gradient} hover:shadow-md transition-all duration-300`}
                     >
                       <Play className="w-3 h-3 mr-2" />
