@@ -125,8 +125,7 @@ export const validateForm = (formData, isLogin) => {
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
-      errors.password =
-        "Password must be 8+ characters and include upper, lower, number, and special character (e.g. Test@123)";
+      errors.password = PASSWORD_REQUIREMENTS_MESSAGE;
     }
   }
 
