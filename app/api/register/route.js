@@ -1,13 +1,37 @@
 import { put } from "@vercel/blob";
+import { randomUUID } from "crypto";
 import { connectDb } from "@/lib/mongodb";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const getImageExtension = (mimeType) => {
+  switch (mimeType) {
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "image/jpeg":
+    default:
+      return "jpg";
+  }
+};
 
 export async function POST(req) {
   try {
     const formData = await req.formData();
-    const name = formData.get("name");
-    const rollNo = formData.get("rollNo");
-    const email = formData.get("email");
+    const name = normalizeText(formData.get("name"));
+    const rollNo = normalizeText(formData.get("rollNo"));
+    const email = normalizeText(formData.get("email")).toLowerCase();
     const file = formData.get("photo");
 
     if (!name || !rollNo || !email || !file) {
@@ -19,7 +43,9 @@ export async function POST(req) {
     const users = db.collection("users");
 
     // Check if user already registered
-    const existingUser = await users.findOne({ rollNo });
+    const existingUser = await users.findOne({
+      $or: [{ rollNo }, { email }],
+    });
     if (existingUser) {
       return jsonError("User already registered with a photo", 409);
     }
@@ -29,8 +55,9 @@ export async function POST(req) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Generate unique filename
-    const safeName = name.replace(/[^a-zA-Z0-9_-]/g, "_");
-    const fileName = `labels/${safeName}/1.jpg`;
+    const safeName = name.replace(/[^a-zA-Z0-9_-]/g, "_") || "user";
+    const fileExtension = getImageExtension(file.type);
+    const fileName = `labels/${safeName}/${randomUUID()}.${fileExtension}`;
 
     // Upload to Vercel Blob
     const blob = await put(fileName, buffer, {
@@ -43,7 +70,7 @@ export async function POST(req) {
       name,
       rollNo,
       email,
-      image: blob.url, // only one photo allowed
+      image: blob.url,
     };
     await users.insertOne(user);
 
