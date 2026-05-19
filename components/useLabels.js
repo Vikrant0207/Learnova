@@ -16,7 +16,7 @@ export default function useLabels() {
         if (!data.success) {
           throw new Error(data.error || "Failed to fetch labels");
         }
-        setLabels(data.data?.labels ?? []);
+        setLabels(Array.isArray(data.data) ? data.data : []);
       } catch (err) {
         console.error(err);
         setError(err.message);
