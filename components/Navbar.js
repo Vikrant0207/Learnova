@@ -311,7 +311,7 @@ export function Navbar() {
             </Link>
 
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="hidden sm:flex items-center space-x-2">
         
               {navigationItems.map((item) => {
                 const isActive =
@@ -333,9 +333,9 @@ export function Navbar() {
               })}
 
               { isAuthenticated ? (
-                <div className="flex items-center space-x-2 md:space-x-4 ml-2 md:ml-6">
+                <div className="flex items-center space-x-2 sm:space-x-4 ml-2 sm:ml-6">
                 
-                  <Button asChild className="hidden md:block relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
+                  <Button asChild className="hidden sm:block relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
                     <Link href="/attendance">
                       <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <span className="relative flex items-center">
@@ -462,7 +462,7 @@ export function Navbar() {
                         )}
                       </div>
 
-                      <div className="hidden md:block text-left">
+                      <div className="hidden sm:block text-left">
                         <p className="text-sm font-medium">
                           {getUserDisplayName()}
                         </p>
@@ -516,7 +516,7 @@ export function Navbar() {
                   </div>
                 </div>
               ) : (
-                <div className="ml-2 md:ml-6">
+                <div className="ml-2 sm:ml-6">
                   <Button asChild className="relative bg-gradient-to-r from-accent to-blue-500 hover:from-accent/90 hover:to-blue-600 text-white font-medium shadow-lg hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 group overflow-hidden">
                     <Link href="/auth">
                       <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -531,7 +531,7 @@ export function Navbar() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            <div className="sm:hidden">
               <Button
                 variant="ghost"
                 size="sm"
@@ -552,17 +552,19 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <>
-          <button
-            aria-label="Close mobile menu"
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[49] md:hidden"
-            onClick={() =>
-              setIsMenuOpen(false)
-            }
-          />
+      <button
+        aria-label="Close mobile menu"
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[49] sm:hidden transition-opacity duration-300 ${
+          isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMenuOpen(false)}
+      />
 
-          <div className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-black z-[52] md:hidden border-l border-white/10 shadow-2xl">
+      <div
+        className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-black z-[52] sm:hidden border-l border-white/10 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${
+          isMenuOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
               <h2 className="text-white text-lg font-bold">
                 Menu
@@ -713,8 +715,6 @@ export function Navbar() {
               </div>
             </div>
           </div>
-        </>
-      )}
     </>
   );
 }
