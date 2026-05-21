@@ -36,6 +36,15 @@ describe("POST /api/register - Authentication, Rollback, and Validation Security
     jest.clearAllMocks();
     rateLimitMap.clear();
 
+    if (rateLimitMap) {
+      rateLimitMap.clear();
+    }
+
+    verifyFirebaseToken.mockImplementation(async (token) => {
+      if (!token || token === "invalid-token") return null;
+      return { uid: "mock-uid", email: token };
+    });
+
     mockFindOne = jest.fn();
     mockInsertOne = jest.fn();
 
@@ -60,9 +69,22 @@ describe("POST /api/register - Authentication, Rollback, and Validation Security
     });
   });
 
-  const mockFile = {
-    arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(8)),
-    type: "image/jpeg",
+  const createMockFile = (mimeType, size, magicBytes = []) => {
+    const buffer = new Uint8Array(magicBytes.concat(new Array(Math.max(0, 12 - magicBytes.length)).fill(0))).buffer;
+    const BaseClass = typeof File !== "undefined" ? File : class {};
+    const mockFileObj = Object.create(BaseClass.prototype);
+    Object.defineProperty(mockFileObj, "type", { value: mimeType, writable: true, enumerable: true, configurable: true });
+    Object.defineProperty(mockFileObj, "size", { value: size, writable: true, enumerable: true, configurable: true });
+    Object.defineProperty(mockFileObj, "arrayBuffer", { value: jest.fn().mockResolvedValue(buffer), writable: true, enumerable: true, configurable: true });
+    Object.defineProperty(mockFileObj, "slice", {
+      value: jest.fn().mockReturnValue({
+        arrayBuffer: jest.fn().mockResolvedValue(buffer),
+      }),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+    return mockFileObj;
   };
 
   const createMockRequest = (data, token = "user@domain.com") => {
@@ -71,6 +93,17 @@ describe("POST /api/register - Authentication, Rollback, and Validation Security
       headers.set("authorization", `Bearer ${token}`);
     }
     return {
+      headers: {
+        get: jest.fn().mockImplementation((name) => {
+          if (name.toLowerCase() === "authorization") {
+            return authHeader;
+          }
+          if (name.toLowerCase() === "x-forwarded-for") {
+            return data.ip || "127.0.0.1";
+          }
+          return null;
+        }),
+      },
       formData: jest.fn().mockResolvedValue({
         get: (key) => data[key],
       }),
