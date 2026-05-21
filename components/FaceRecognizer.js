@@ -9,7 +9,7 @@ import { recordAttendance } from "@/services/attendanceService";
 import { checkAndSendAttendanceAlert } from "@/services/statsService";
 import { analytics } from "@/lib/firebaseConfig";
 import { logEvent } from "firebase/analytics";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 const MIN_CONFIDENCE_TO_RECORD = 60;
 
