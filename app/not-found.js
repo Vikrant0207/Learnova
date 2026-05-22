@@ -74,7 +74,7 @@ export default function NotFound() {
         <DarkVeil />
 
         <div
-          className="absolute h-96 w-96 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-3xl"
+          className="absolute h-96 w-96 rounded-full bg-gradient-to-r from-purple-600/20 to-blue-600/20 blur-3xl pointer-events-none"
           style={mouseOrbStyle}
         />
 
@@ -82,7 +82,7 @@ export default function NotFound() {
           {PARTICLES_DATA.map((particle) => (
             <div
               key={particle.id}
-              className="absolute h-1 w-1 rounded-full bg-accent/20 animate-float"
+              className="absolute h-1.5 w-1.5 rounded-full bg-indigo-500/30 animate-float"
               style={{
                 left: `${particle.left}%`,
                 top: `${particle.top}%`,

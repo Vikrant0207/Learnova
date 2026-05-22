@@ -1,23 +1,44 @@
 import { connectDb } from "@/lib/mongodb";
 import { verifyFirebaseToken } from "@/lib/firebase-admin";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
     const authorization = request.headers.get("authorization");
     const token = authorization?.split(" ")[1];
 
-    const decodedToken = await verifyFirebaseToken(token);
+    const authResult = await verifyFirebaseToken(token);
 
-    if (!decodedToken) {
-      return jsonError("Unauthorized", 401);
+    if (!authResult.valid) {
+      return jsonError(
+        { message: "Unauthorized", reason: authResult.reason },
+        401
+      );
     }
 
+    const decodedToken = authResult.decodedToken;
+
+
     const body = await request.json();
+    const { reason, details, date } = body;
+
+    if (!reason || typeof reason !== "string" || reason.trim() === "") {
+      return jsonError("Reason is required and must be a string", 400);
+    }
+    if (!details || typeof details !== "string" || details.trim() === "") {
+      return jsonError("Details are required and must be a string", 400);
+    }
+    if (!date || typeof date !== "string" || date.trim() === "") {
+      return jsonError("Date is required and must be a string", 400);
+    }
+
     const db = await connectDb();
 
     const exceptionData = {
-      ...body,
+      reason: reason.trim(),
+      details: details.trim(),
+      date: date.trim(),
       studentEmail: decodedToken.email,
       status: "pending",
       createdAt: new Date(),
@@ -34,7 +55,6 @@ export async function POST(request) {
       201,
     );
   } catch (error) {
-    console.error("Exception creation error:", error);
     return jsonError("Internal server error", 500);
   }
 }
