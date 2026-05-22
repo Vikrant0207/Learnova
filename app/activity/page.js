@@ -618,9 +618,9 @@ export default function ActivityPage() {
                           <span
                             className={`text-xs px-2 py-1 rounded-full font-medium ${
                               activity.type === "quiz"
-                                ? "bg-blue-500/20 text-blue-300"
-                                : "bg-green-500/20 text-green-300"
-                            }`}
+                                ? "bg-blue-600 text-white"
+                                : "bg-green-600 text-white"
+                          }`}
                           >
                             {activity.type}
                           </span>
