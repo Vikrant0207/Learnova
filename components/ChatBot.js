@@ -303,9 +303,6 @@ const LearnovaChatbot = () => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const messagesEndRef =
-    useRef(null);
-
   useEffect(() => {
     if (!inputMessage && textareaRef.current) {
       textareaRef.current.style.height = "auto";
