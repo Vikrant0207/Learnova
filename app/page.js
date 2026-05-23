@@ -1,6 +1,11 @@
 "use client";
+<<<<<<< HEAD
 import { useTheme } from "next-themes";
 import { useState, useEffect, useMemo, useCallback } from "react";
+=======
+import RollingNumber from "@/components/RollingNumber";
+import StatCard from "@/components/StatCard";
+>>>>>>> eb43f1d (feat: add rolling number animation to impact stats section)
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import SplitText from "@/components/ui-block/SplitText";
@@ -38,13 +43,6 @@ const PARTICLES_DATA = [
   { id: 3, left: 80, top: 20, delay: 4, duration: 14 },
   { id: 4, left: 30, top: 70, delay: 6, duration: 11 },
   { id: 5, left: 90, top: 50, delay: 8, duration: 13 },
-];
-
-const STATS_DATA = [
-  { number: "10,000+", label: "Institution Partnerships", icon: BookOpen },
-  { number: "5M+", label: "Student Tracking", icon: Users },
-  { number: "70%", label: "Time Saved", icon: TrendingUp },
-  { number: "98%", label: "Accuracy Rate", icon: Award },
 ];
 
 const VALUES_DATA = [
@@ -612,8 +610,13 @@ export default function AboutPage() {
                   <div className="group text-center">
                     <div className="h-full bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 hover:border-accent/40 transition-all duration-700 hover:scale-[1.02] hover:shadow-2xl">
                       <stat.icon className="w-12 h-12 text-accent mx-auto mb-6 group-hover:scale-110 transition-transform duration-500" />
+<<<<<<< HEAD
                       <div className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-3 group-hover:text-accent transition-colors duration-500">
                         {stat.number}
+=======
+                      <div className="text-4xl md:text-5xl font-bold text-white mb-3 group-hover:text-accent transition-colors duration-500">
+                        <RollingNumber value={stat.number} />
+>>>>>>> eb43f1d (feat: add rolling number animation to impact stats section)
                       </div>
                       <p className="text-black dark:text-white/80 font-medium text-lg group-hover:text-black dark:text-white transition-colors duration-500">
                         {stat.label}
