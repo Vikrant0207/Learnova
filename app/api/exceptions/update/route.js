@@ -89,6 +89,7 @@ export const PUT = withErrorHandler(async (request) => {
           status: trimmedStatus,
           comments,
           reviewedBy: decodedToken.email,
+          approverId: decodedToken.uid,
           reviewedAt: new Date(),
           updatedAt: new Date(),
         },
@@ -99,6 +100,10 @@ export const PUT = withErrorHandler(async (request) => {
   }
 
   if (result.matchedCount === 0) throw new NotFoundError("Exception not found");
+
+  console.log(
+    `[Audit Log] Exception ${exceptionId} ${trimmedStatus} by approver UID: ${decodedToken.uid} (${decodedToken.email}, Role: ${profile.role}) at ${new Date().toISOString()}`
+  );
 
   return NextResponse.json({ message: "Exception updated successfully" });
 });
