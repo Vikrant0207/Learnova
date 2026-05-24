@@ -27,6 +27,7 @@ const AttendanceValidation = ({ onValidationSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [settings, setSettings] = useState(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [modalLocationLoading, setModalLocationLoading] = useState(false);
@@ -43,31 +44,42 @@ const AttendanceValidation = ({ onValidationSuccess }) => {
     currentLocation: null, // Add this field
   });
 
-  // Load settings from secure API endpoint
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (!user) return; // Wait for user to be authenticated
+  // Load settings from secure API endpoint (with error handling & retry)
+  const fetchSettings = async () => {
+    if (!user) return;
+    setSettingsLoading(true);
+    setSettingsError(null);
 
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch("/api/attendance/settings", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const settingsData = await response.json();
-          setSettings(settingsData);
-          checkTimeValidity(settingsData.timeWindow);
-        }
-      } catch (error) {
-      } finally {
-        setSettingsLoading(false);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/attendance/settings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`HTTP ${response.status} ${response.statusText} ${text}`);
       }
-    };
 
-    loadSettings();
+      const settingsData = await response.json();
+      setSettings(settingsData);
+      setSettingsError(null);
+      checkTimeValidity(settingsData.timeWindow);
+    } catch (error) {
+      console.error("Error loading attendance settings:", error);
+      setSettings(null);
+      setSettingsError(error?.message || "Unknown error");
+      toast.error("Unable to load attendance settings. Check console for details.");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchSettings();
   }, [user]);
 
   const checkTimeValidity = (timeWindow) => {
@@ -419,14 +431,25 @@ const AttendanceValidation = ({ onValidationSuccess }) => {
               Unable to load attendance settings. Please contact your
               administrator or try refreshing the page.
             </p>
+            {settingsError && (
+              <p className="text-sm text-red-400 mt-2 break-words">
+                {settingsError}
+              </p>
+            )}
           </div>
-          <Button
-            onClick={() => window.location.reload()}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh Page
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={fetchSettings} className="bg-red-600 hover:bg-red-700 text-white">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="outline"
+              className="text-white border border-white/10"
+            >
+              Hard Refresh
+            </Button>
+          </div>
         </div>
       </div>
     );
