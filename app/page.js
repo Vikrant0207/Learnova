@@ -152,6 +152,7 @@ export default function Page() {
     <>
       <Navbar />
       <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30">
+        <Navbar />
         
         {/* Premium Infographic Concentric Rings Stats Section */}
         <section
