@@ -19,7 +19,6 @@ export const POST = withValidation(
       throw new AppError("Too many attempts. Please try again later.", 429);
     }
 
-    const { role, fullName, instituteName } = data;
     const { role, fullName, instituteName, inviteCode } = data;
 
     // --- Privilege Escalation Fix: Enforce Invite Codes for Elevated Roles ---
