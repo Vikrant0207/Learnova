@@ -447,8 +447,6 @@ const LearnovaChatbot = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // This is the only one we need!
-  const [messages, setMessages] = useState(() => [INITIAL_MESSAGE]);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -582,30 +580,31 @@ const LearnovaChatbot = () => {
   // ---------------------------------------------------------------------------
   // Theme tokens - Enhanced for rich glassmorphism & premium UI spacing
   // ---------------------------------------------------------------------------
-  
   const themeTokens = {
-    bg: isDarkMode 
-      ? "bg-gray-950/90 backdrop-blur-xl text-white" 
+    bg: isDarkMode
+      ? "bg-gray-950/90 backdrop-blur-xl text-white"
       : "bg-white/95 backdrop-blur-xl text-gray-900",
-    header: "bg-gradient-to-r from-purple-700 via-blue-700 to-indigo-700",
-    border: isDarkMode ? "border-gray-700" : "border-gray-200",
-  const t = {
-    bg: isDarkMode 
-      ? "bg-gray-950/90 backdrop-blur-xl text-white" 
-      : "bg-white/95 backdrop-blur-xl text-gray-900",
-    header: "bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 border-b border-white/10 shadow-lg shadow-purple-950/20",
+    header:
+      "bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 border-b border-white/10 shadow-lg shadow-purple-950/20",
     border: isDarkMode ? "border-white/10" : "border-gray-200/80",
     botMsg: isDarkMode
       ? "bg-white/[0.04] text-gray-200 border border-white/5 shadow-[0_4px_24px_rgba(139,92,246,0.15)]"
       : "bg-gray-900/[0.03] text-gray-800 border border-black/5 shadow-[0_4px_20px_rgba(139,92,246,0.06)]",
-    userMsg: "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_4px_18px_rgba(139,92,246,0.25)] text-white border border-purple-500/10",
-    botAvatar: isDarkMode ? "bg-purple-800/80 text-purple-300 border border-purple-500/20" : "bg-purple-100 text-purple-600 border border-purple-200",
-    userAvatar: isDarkMode ? "bg-indigo-800/80 text-indigo-300 border border-indigo-500/20" : "bg-indigo-100 text-indigo-600 border border-indigo-200",
+    userMsg:
+      "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_4px_18px_rgba(139,92,246,0.25)] text-white border border-purple-500/10",
+    botAvatar: isDarkMode
+      ? "bg-purple-800/80 text-purple-300 border border-purple-500/20"
+      : "bg-purple-100 text-purple-600 border border-purple-200",
+    userAvatar: isDarkMode
+      ? "bg-indigo-800/80 text-indigo-300 border border-indigo-500/20"
+      : "bg-indigo-100 text-indigo-600 border border-indigo-200",
     input: isDarkMode
       ? "bg-white/[0.03] border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
       : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-450 focus:ring-2 focus:ring-purple-400 focus:border-transparent",
     catBtn: isDarkMode ? "hover:bg-white/[0.05] text-gray-300" : "hover:bg-gray-100 text-gray-600",
-    catBtnActive: isDarkMode ? "bg-purple-800/60 text-purple-200 border border-purple-500/30" : "bg-purple-100 text-purple-700 border border-purple-200",
+    catBtnActive: isDarkMode
+      ? "bg-purple-800/60 text-purple-200 border border-purple-500/30"
+      : "bg-purple-100 text-purple-700 border border-purple-200",
     suggestion: isDarkMode
       ? "bg-purple-950/40 text-purple-300 hover:bg-purple-900/40 border border-purple-800/40 shadow-sm"
       : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 shadow-sm",
@@ -643,10 +642,10 @@ const LearnovaChatbot = () => {
   // ---------------------------------------------------------------------------
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 flex flex-col ${themeTokens.bg} rounded-xl shadow-2xl transition-all duration-300 border ${themeTokens.border} ${
-        isMinimized ? "w-72 h-16 overflow-hidden" : "w-96 h-[660px]"
-      className={`fixed z-50 flex flex-col ${t.bg} shadow-2xl transition-all duration-300 border ${t.border} ${
-        isMinimized ? "bottom-6 right-6 w-72 h-16 overflow-hidden rounded-xl" : "bottom-0 right-0 w-full h-full rounded-none sm:bottom-6 sm:right-6 sm:w-96 sm:h-[660px] sm:rounded-xl"
+      className={`fixed z-50 flex flex-col ${themeTokens.bg} shadow-2xl transition-all duration-300 border ${themeTokens.border} ${
+        isMinimized
+          ? "bottom-6 right-6 w-72 h-16 overflow-hidden rounded-xl"
+          : "bottom-0 right-0 w-full h-full rounded-none sm:bottom-6 sm:right-6 sm:w-96 sm:h-[660px] sm:rounded-xl"
       }`}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
