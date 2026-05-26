@@ -32,10 +32,24 @@ export const POST = withErrorHandler(async (request) => {
   initializeFirebase();
   const db = admin.firestore();
 
-  // Prevent privilege escalation: reject if a role is already set
+  // Prevent privilege escalation: only block if the requested role CONFLICTS
+  // with an existing one. Existing users whose role matches still need their
+  // Firebase custom claim set (migration path), so we let them through.
   const existingProfile = await db.collection("users").doc(decodedToken.uid).get();
-  if (existingProfile.exists || decodedToken.role) {
-    return jsonError("Forbidden: Role has already been set", 403);
+  if (existingProfile.exists) {
+    const existingRole = existingProfile.data()?.role;
+    if (existingRole && existingRole !== role) {
+      return jsonError(
+        `Forbidden: Account is already registered as "${existingRole}". Role cannot be changed.`,
+        403
+      );
+    }
+  } else if (decodedToken.role && decodedToken.role !== role) {
+    // No Firestore profile yet, but token already carries a different custom claim
+    return jsonError(
+      `Forbidden: Token already carries role "${decodedToken.role}". Role cannot be changed.`,
+      403
+    );
   }
 
   // Cryptographically sign the role into the Firebase token so the
