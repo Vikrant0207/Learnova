@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * @param {Object} props
  * @param {React.ReactNode} props.children - The trigger element.
  * @param {React.ReactNode} [props.content] - The tooltip content.
- * @param {React.ReactNode} [props.text] - Fallback content prop for backward compatibility.
+ * @param {React.ReactNode} [props.text] - @deprecated Use `props.content` instead. Fallback content prop for backward compatibility.
  * @param {'top' | 'bottom' | 'left' | 'right'} [props.position="top"] - Placement of the tooltip content relative to the trigger.
  * @param {string} [props.className] - Additional styling classes for the tooltip content.
  * @param {number} [props.delayDuration=200] - Open delay in milliseconds.
