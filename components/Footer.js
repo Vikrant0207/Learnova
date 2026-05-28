@@ -86,23 +86,43 @@ export default function Footer() {
         <div className="grid gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl lg:grid-cols-[1.3fr_0.9fr_0.9fr_1fr]">
           
           {/* Brand Column */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 ring-1 ring-white/10">
-                <BookOpen className="h-5 w-5 text-fuchsia-200" />
-              </span>
-              <div>
-                <p className="text-xl font-semibold text-white">Learnova</p>
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80">Smart Learning</p>
-              </div>
-            </div>
-            <p className="text-sm text-slate-300 leading-6 max-w-xs">
-              AI-powered engagement and smart attendance for modern campuses.
-            </p>
-            <div className="flex items-center gap-3">
-              {socialLinks.map((s) => <SocialIcon key={s.label} {...s} />)}
-            </div>
-          </div>
+          {/* Brand Column */}
+<motion.div className="space-y-6" variants={itemVariants}>
+  <div className="flex items-center gap-3">
+    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 ring-1 ring-white/10">
+      <BookOpen className="h-5 w-5 text-fuchsia-200" />
+    </span>
+    <div>
+      <p className="text-xl font-semibold text-white">Learnova</p>
+      <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80">Smart Learning</p>
+    </div>
+  </div>
+  
+  <p className="text-sm text-slate-300 leading-6 max-w-xs">
+    AI-powered engagement and smart attendance for modern campuses.
+  </p>
+
+  {/* Buttons added here */}
+  <div className="flex flex-wrap items-center gap-3">
+    <Link
+      href="/register"
+      className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-transform duration-200 hover:-translate-y-0.5"
+    >
+      Get Started
+      <ArrowUpRight className="h-4 w-4" />
+    </Link>
+    <Link
+      href="/contact"
+      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/10 hover:-translate-y-0.5"
+    >
+      Contact Team
+    </Link>
+  </div>
+
+  <div className="flex items-center gap-3">
+    {socialLinks.map((s) => <SocialIcon key={s.label} {...s} />)}
+  </div>
+</motion.div>
 
           {/* Quick Links */}
           <div className="space-y-5">
