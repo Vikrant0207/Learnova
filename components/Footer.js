@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { 
-  BookOpen, Mail, Phone, ArrowUpRight, Github, Twitter, 
+  BookOpen, ArrowUpRight, Github, Twitter, 
   Linkedin, Youtube, Heart, Sparkles, Keyboard, ExternalLink 
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -45,7 +45,6 @@ function SocialIcon({ href, icon: Icon, label, glowColor = "purple" }) {
   );
 }
 
-const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
 export default function Footer() {
@@ -70,7 +69,6 @@ export default function Footer() {
     { label: "Impact", href: "/#impact" },
   ];
 
-  
   const socialLinks = [
     { icon: Github, href: "https://github.com/Premshaw23/Learnova", label: "GitHub", glow: "purple" },
     { icon: Twitter, href: "https://twitter.com/learnova", label: "Twitter", glow: "blue" },
@@ -86,43 +84,26 @@ export default function Footer() {
         <div className="grid gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl lg:grid-cols-[1.3fr_0.9fr_0.9fr_1fr]">
           
           {/* Brand Column */}
-          {/* Brand Column */}
-<motion.div className="space-y-6" variants={itemVariants}>
-  <div className="flex items-center gap-3">
-    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 ring-1 ring-white/10">
-      <BookOpen className="h-5 w-5 text-fuchsia-200" />
-    </span>
-    <div>
-      <p className="text-xl font-semibold text-white">Learnova</p>
-      <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80">Smart Learning</p>
-    </div>
-  </div>
-  
-  <p className="text-sm text-slate-300 leading-6 max-w-xs">
-    AI-powered engagement and smart attendance for modern campuses.
-  </p>
-
-  {/* Buttons added here */}
-  <div className="flex flex-wrap items-center gap-3">
-    <Link
-      href="/register"
-      className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-transform duration-200 hover:-translate-y-0.5"
-    >
-      Get Started
-      <ArrowUpRight className="h-4 w-4" />
-    </Link>
-    <Link
-      href="/contact"
-      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/10 hover:-translate-y-0.5"
-    >
-      Contact Team
-    </Link>
-  </div>
-
-  <div className="flex items-center gap-3">
-    {socialLinks.map((s) => <SocialIcon key={s.label} {...s} />)}
-  </div>
-</motion.div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 ring-1 ring-white/10">
+                <BookOpen className="h-5 w-5 text-fuchsia-200" />
+              </span>
+              <div>
+                <p className="text-xl font-semibold text-white">Learnova</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80">Smart Learning</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-300 leading-6 max-w-xs">AI-powered engagement and smart attendance for modern campuses.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/register" className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-transform duration-200 hover:-translate-y-0.5">
+                Get Started <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="flex items-center gap-3">
+              {socialLinks.map((s) => <SocialIcon key={s.label} {...s} />)}
+            </div>
+          </div>
 
           {/* Quick Links */}
           <div className="space-y-5">
@@ -143,21 +124,44 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
-          <div className="space-y-4">
+          {/* Contact Column with Integrated Modern Campus Card */}
+          <div className="space-y-6">
             <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-white/90">Contact</h3>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-slate-300 space-y-2">
               <p>Email: {CONTACT_INFO.email}</p>
               <p>Phone: {CONTACT_INFO.phone}</p>
               <Link href="/contact" className="flex items-center gap-1 text-purple-400">Get in touch <ExternalLink size={11}/></Link>
             </div>
+            
+            <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-transparent to-cyan-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-4 w-4 text-fuchsia-200 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-white">Built for modern campuses</p>
+                  <p className="text-[10px] leading-5 text-slate-300">Track attendance, reduce admin load, and keep every stakeholder aligned.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Bottom Bar with Pill Elements */}
+        <motion.div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between" variants={itemVariants}>
+          <p className="text-sm text-slate-400">© {currentYear} Learnova. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-[0.24em] text-slate-400">
+            <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-purple-200">
+              <Heart size={10} className="fill-purple-400/80" /> Trusted by educators
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-slate-200">
+              Built for modern classrooms
+            </span>
+          </div>
+        </motion.div>
+
         {/* Brand Animation */}
-        <div className="mt-16 flex justify-center select-none">
+        <div className="mt-16 flex justify-center select-none overflow-hidden">
           {brandLetters.map((letter, i) => (
-            <span key={i} className="text-8xl font-black text-white/5 cursor-default hover:text-purple-400/30 transition-all"
+            <span key={i} className="text-[10vw] font-black text-white/5 cursor-default hover:text-purple-400/30 transition-all"
                   onMouseEnter={() => setHoveredBrandLetter(i)} onMouseLeave={() => setHoveredBrandLetter(null)}>
               {letter}
             </span>
