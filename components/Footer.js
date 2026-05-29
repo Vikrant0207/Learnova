@@ -1,6 +1,9 @@
 "use client";
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 import React, { useState } from "react";
 import Link from "next/link";
 import { 
@@ -16,13 +19,20 @@ import {
   Sparkles, 
   ExternalLink,
   Keyboard 
+<<<<<<< HEAD
 =======
 import { useState } from "react";
+=======
+import { useState, useEffect } from "react";
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 import Link from "next/link";
 import { 
   BookOpen, ArrowUpRight, Github, Twitter, 
   Linkedin, Youtube, Heart, Sparkles, Keyboard, ExternalLink 
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CONTACT_INFO } from "../constants/contact";
@@ -34,6 +44,9 @@ function FooterLink({ href, children, external = false }) {
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
     <motion.li
       whileHover={{ x: 4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -44,10 +57,15 @@ function FooterLink({ href, children, external = false }) {
         {...externalProps}
         className="group flex items-center gap-2 text-sm text-slate-300 transition-colors duration-300 hover:text-purple-400"
       >
+<<<<<<< HEAD
 =======
     <motion.li whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <LinkComponent href={href} {...externalProps} className="group flex items-center gap-2 text-sm text-slate-300 transition-colors duration-300 hover:text-white">
 >>>>>>> upstream/master
+=======
+    <motion.li whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+      <LinkComponent href={href} {...externalProps} className="group flex items-center gap-2 text-sm text-slate-300 transition-colors duration-300 hover:text-white">
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
         <span className="relative">
           {children}
           <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-gradient-to-r from-purple-400 to-blue-400 transition-all duration-300 group-hover:w-full" />
@@ -77,6 +95,9 @@ function SocialIcon({ href, icon: Icon, label, glowColor = "purple" }) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 // Stagger animation wrappers
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -88,6 +109,7 @@ const containerVariants = {
     },
   },
 };
+<<<<<<< HEAD
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
@@ -100,9 +122,19 @@ const itemVariants = {
 =======
 const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 >>>>>>> upstream/master
+=======
+const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+
+export default function Footer() {
+  const [currentYear, setCurrentYear] = useState(2026);
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
   const [hoveredBrandLetter, setHoveredBrandLetter] = useState(null);
 
   const quickLinks = [
@@ -135,6 +167,9 @@ export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border/70 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_38%),linear-gradient(180deg,rgba(9,9,11,0.94),rgba(3,7,18,1))] text-foreground transition-colors duration-300">
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
       {/* ── Decorative background effects ── */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -top-20 left-6 h-48 w-48 rounded-full bg-fuchsia-500/10 blur-3xl" />
@@ -155,19 +190,28 @@ export default function Footer() {
           
           {/* ── Brand Column ── */}
           <motion.div className="space-y-6" variants={itemVariants}>
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
       <div className="relative mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl lg:grid-cols-[1.3fr_0.9fr_0.9fr_1fr]">
           
           {/* Brand Column */}
           <div className="space-y-6">
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 ring-1 ring-white/10">
                 <BookOpen className="h-5 w-5 text-fuchsia-200" />
               </span>
               <div>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
                 <p className="text-xl font-semibold tracking-tight text-white">Learnova</p>
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80 font-medium">
                   Smart Learning
@@ -214,7 +258,10 @@ export default function Footer() {
                   <Keyboard className="h-4 w-4 text-fuchsia-200" />
                   <span>Keyboard Shortcuts</span>
                 </button>
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
                 <p className="text-xl font-semibold text-white">Learnova</p>
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-200/80">Smart Learning</p>
               </div>
@@ -237,12 +284,18 @@ export default function Footer() {
               {quickLinks.map((link) => <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>)}
               <li onClick={() => window.dispatchEvent(new CustomEvent("learnova:open-shortcuts"))} className="cursor-pointer group flex items-center gap-2 text-sm text-slate-300 hover:text-white">
                 <Keyboard className="h-4 w-4 text-fuchsia-200" /> Keyboard Shortcuts
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
               </li>
             </ul>
           </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
           {/* ── Sections Column ── */}
           <motion.div className="space-y-4" variants={itemVariants}>
             <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-white/90 flex items-center gap-2">
@@ -325,7 +378,10 @@ export default function Footer() {
             <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-fuchsia-200/90">
               <Heart size={10} className="fill-fuchsia-400/80 text-fuchsia-400" />
               Trusted by educators
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
           {/* Sections */}
           <div className="space-y-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-white/90">Sections</h3>
@@ -362,7 +418,10 @@ export default function Footer() {
           <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-[0.24em] text-slate-400">
             <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-purple-200">
               <Heart size={10} className="fill-purple-400/80" /> Trusted by educators
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
             </span>
             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-slate-200">
               Built for modern classrooms
@@ -371,6 +430,9 @@ export default function Footer() {
         </motion.div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
       {/* ── Large Backdrop Interactive Branding text ── */}
       <div className="relative overflow-hidden border-t border-white/5">
         <div className="mx-auto max-w-7xl px-6 py-10">
@@ -406,7 +468,10 @@ export default function Footer() {
               </motion.span>
             ))}
           </div>
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
         {/* Brand Animation */}
         <div className="mt-16 flex justify-center select-none overflow-hidden">
           {brandLetters.map((letter, i) => (
@@ -415,7 +480,10 @@ export default function Footer() {
               {letter}
             </span>
           ))}
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
         </div>
       </div>
     </footer>

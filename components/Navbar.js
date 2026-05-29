@@ -30,6 +30,8 @@ import {
   Keyboard,
   Search,
   MessageSquareWarning,
+  BellOff,
+  HeartPulse,
 } from "lucide-react";
 
 // ── Animation Variants ──────────────────────────────────────────────────────
@@ -85,8 +87,8 @@ function NavLink({ href, label, isActive }) {
       )}
       <span className="absolute inset-0 rounded-xl bg-zinc-200/60 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out" />
       <span className={`relative z-10 transition-colors duration-300 ${isActive
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-300"
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-300"
         }`}>
         {label}
       </span>
@@ -158,18 +160,18 @@ export function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-  const handleResize = () => {
-    // If the window is resized larger than mobile layouts, close the mobile menu
-    if (window.innerWidth >= 640) {
-      setIsMenuOpen(false);
-    }
-  };
+    const handleResize = () => {
+      // If the window is resized larger than mobile layouts, close the mobile menu
+      if (window.innerWidth >= 640) {
+        setIsMenuOpen(false);
+      }
+    };
 
-  window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize);
 
-  // ✅ Explicit arrow function hook return to safely purge registration on unmount
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+    // ✅ Explicit arrow function hook return to safely purge registration on unmount
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -210,6 +212,7 @@ export function Navbar() {
 
   const navigationItems = [
     { href: "/", label: "Home", icon: Home },
+    { href: "/wellness", label: "Wellness", icon: HeartPulse },
     { href: "/productivity", label: "Focus", icon: Sparkles },
     { href: "/activity", label: "Activities", icon: Activity },
     { href: "/complaints", label: "Complaints", icon: MessageSquareWarning },
@@ -395,7 +398,17 @@ export function Navbar() {
                           </div>
                           <div className="max-h-60 overflow-y-auto divide-y divide-zinc-100/50 dark:divide-white/5">
                             {notifications.length === 0 ? (
-                              <p className="p-4 text-center text-sm text-zinc-400">No new notices</p>
+                              <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-3.5 select-none">
+                                <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500">
+                                  <BellOff className="h-6 w-6 stroke-[1.5]" />
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">You're all caught up!</p>
+                                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[180px] leading-normal mx-auto">
+                                    No new notifications to display.
+                                  </p>
+                                </div>
+                              </div>
                             ) : (
                               notifications.map((n) => (
                                 <div
@@ -638,8 +651,8 @@ export function Navbar() {
                         href={item.href}
                         onClick={() => setIsMenuOpen(false)}
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive
-                            ? "bg-blue-50 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400"
-                            : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
+                          ? "bg-blue-50 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400"
+                          : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
                           }`}
                       >
                         <item.icon className={`h-4 w-4 ${isActive ? "text-blue-500" : "text-zinc-400"}`} />

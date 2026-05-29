@@ -19,6 +19,7 @@ import BackToTop from "@/components/ui/BackToTop";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import ScrollProgress from "@/components/ui/ScrollProgress";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import AllProviders from "./providers/AllProviders";
 export { metadata } from "@/lib/seo/siteMetadata";
 import { siteStructuredData } from "@/lib/seo/siteStructuredData";
@@ -29,12 +30,17 @@ import CommandPaletteWrapper from "@/components/CommandPalette";
 =======
 import RouteAnnouncer from "@/components/RouteAnnouncer";
 >>>>>>> upstream/master
+=======
+import RouteAnnouncer from "@/components/RouteAnnouncer";
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ShortcutsModal from "@/components/ShortcutsModal";
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Validate environment variables at startup (server-side only).
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 // ─── Command palette (wrapper owns isOpen state via useCommandPalette hook) ──
 // Conflict resolved: use CommandPaletteWrapper, NOT CommandPalette directly.
 // CommandPalette requires isOpen + onClose props — it has no internal state.
@@ -49,23 +55,36 @@ import AllProviders from "./providers/AllProviders";
 export { metadata } from "@/lib/seo/siteMetadata";
 import { siteStructuredData } from "@/lib/seo/siteStructuredData";
 import NextTopLoader from "nextjs-toploader";
+
+// 🎯 FIX: Explicitly loading overlays
+import CommandPaletteWrapper from "@/components/CommandPalette";
 import CommandPalette from "../components/CommandPalette";
 import RouteAnnouncer from "@/components/RouteAnnouncer";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ShortcutsModal from "@/components/ShortcutsModal";
 
+// Validate environment variables at startup (server-side only).
 // ─── Environment validation (server-side only, runs once at startup) ─────────
 // Kept outside the component so it runs at module load time, not per-render.
 // throwOnError:false keeps local dev working even without all secrets set.
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 if (typeof window === "undefined") {
   try {
     const { validateEnv } = require("@/lib/env");
     validateEnv({
 <<<<<<< HEAD
+<<<<<<< HEAD
       throwOnError: false,
 =======
       throwOnError: false, // Avoid failing the build during local/CI evaluation
 >>>>>>> upstream/master
+=======
+      throwOnError: false,
+      throwOnError: false, // Avoid failing the build during local/CI evaluation
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
       warnOnce: true,
     });
   } catch (error) {
@@ -88,7 +107,192 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-// ─── Viewport export (Next.js 14+ metadata API) ──────────────────────────────
+export const metadata = {
+  metadataBase: new URL("https://learnova-web.vercel.app"),
+  title: {
+    default: "Learnova - Smart Student Engagement & Attendance Platform",
+    template: "%s | Learnova",
+  },
+  description:
+    "AI-powered student engagement platform with smart attendance tracking, classroom management, and analytics. Trusted by 10,000+ schools worldwide for modern education technology.",
+  keywords: [
+    "student engagement",
+    "attendance platform",
+    "online learning",
+    "education",
+    "courses",
+    "e-learning",
+    "classroom management",
+    "school software",
+    "teacher tools",
+    "smart attendance",
+    "Learnova",
+  ],
+  authors: [{ name: "Learnova Team" }],
+  creator: "Prem Shaw",
+  publisher: "Learnova",
+  applicationName: "Learnova",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Learnova",
+    startupImage: ["/icons/apple-touch-icon.png"],
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "https://learnova-web.vercel.app",
+  },
+  openGraph: {
+    title: "Learnova - Smart Student Engagement & Attendance Platform",
+    description:
+      "AI-powered education platform with smart attendance, student engagement tools, and comprehensive analytics. Join 10,000+ schools using Learnova.",
+    url: "https://learnova-web.vercel.app",
+    siteName: "Learnova",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Learnova - Smart Education Platform",
+        type: "image/jpeg",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learnova - Smart Student Engagement Platform",
+    description:
+      "Transform education with AI-powered tools. Smart attendance, engagement tracking, and analytics for modern classrooms.",
+    site: "@learnova",
+    creator: "@learnova",
+    images: ["/og-image.jpg"],
+  },
+  other: {
+    "google-site-verification": "3qjYnT7GW81-zwJBwv3wJABvxbiSOgDyAlTCKxh9nEs",
+  },
+};
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "website",
+    name: "Learnova",
+    alternateName: "Learnova Education Platform",
+    url: "https://learnova-web.vercel.app",
+    description:
+      "AI-powered student engagement and smart attendance platform",
+    inLanguage: "en-US",
+    mainEntity: {
+      "@type": "Organization",
+      name: "Learnova",
+      url: "https://learnova-web.vercel.app",
+      logo: "https://learnova-web.vercel.app/logo.png",
+      sameAs: [
+        "https://twitter.com/learnova",
+        "https://facebook.com/learnova",
+        "https://linkedin.com/company/learnova",
+        "https://youtube.com/@learnova",
+      ],
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Learnova",
+    description:
+      "Smart student engagement and attendance platform for modern education",
+    url: "https://learnova-web.vercel.app",
+    applicationCategory: "EducationalApplication",
+    operatingSystem: "Web Browser",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      description: "Free trial available",
+    },
+    featureList: [
+      "Smart Attendance Tracking",
+      "Student Engagement Analytics",
+      "Classroom Management Tools",
+      "Teacher Dashboard",
+      "Real-time Reporting",
+    ],
+  },
+  // Site Navigation Structure for Sitelinks
+  {
+    "@context": "https://schema.org",
+    "@type": "SiteNavigationElement",
+    name: "Main Navigation",
+    url: "https://learnova-web.vercel.app",
+    hasPart: [
+      {
+        "@type": "SiteNavigationElement",
+        name: "Sign up",
+        description:
+          "Discover smart attendance tracking, student engagement tools, and classroom management features",
+        url: "https://learnova-web.vercel.app/auth",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "Login",
+        description:
+          "Simple, transparent pricing plans for schools of all sizes. Start free, upgrade anytime",
+        url: "https://learnova-web.vercel.app/auth",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "Getting Started",
+        description:
+          "Quick setup guide for teachers and administrators. Get started in under 5 minutes",
+        url: "https://learnova-web.vercel.app/",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "Activity Centre",
+        description:
+          "Documentation, tutorials, and support resources for Learnova users",
+        url: "https://learnova-web.vercel.app/activity",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "Wellness",
+        description:
+          "Explore mental health and productivity tools for a balanced study journey",
+        url: "https://learnova-web.vercel.app/wellness",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "About Learnova",
+        description:
+          "Learn about our mission to transform education through technology",
+        url: "https://learnova-web.vercel.app/about",
+      },
+      {
+        "@type": "SiteNavigationElement",
+        name: "Contact",
+        description:
+          "Real success stories from schools using Learnova to improve engagement",
+        url: "https://learnova-web.vercel.app/contact",
+      },
+    ],
+  },
+];
+
 export const viewport = {
   width: "device-width",
   initialScale: 1,
@@ -133,16 +337,22 @@ export default function RootLayout({ children }) {
           Skip to Main Content
         </a>
 <<<<<<< HEAD
+<<<<<<< HEAD
           
 =======
 
         {/* ── All context providers (Theme, Auth, Firestore, Notifications) ── */}
 >>>>>>> upstream/master
+=======
+          
+
+        {/* ── All context providers (Theme, Auth, Firestore, Notifications) ── */}
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
         <AllProviders>
           {/* Note: Ensure these providers (ThemeProvider, AuthProvider, etc.) 
               are actually imported and exported correctly in AllProviders 
               or placed here individually if AllProviders doesn't cover them. */}
-          
+
           <ScrollProgress />
 
           {/* ── Route-change loading bar ── */}
@@ -157,7 +367,7 @@ export default function RootLayout({ children }) {
             speed={200}
             shadow="0 0 10px #4f46e5,0 0 5px #4f46e5"
           />
-          
+
           <Suspense fallback={null}>
 
             {/* ── Main page content with error boundary + page transitions ── */}
@@ -171,10 +381,13 @@ export default function RootLayout({ children }) {
             <ScrollToTop />
             <Footer />
 <<<<<<< HEAD
+<<<<<<< HEAD
             <ClientLayout />
             <BackToTop />
 
 =======
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
 
             {/* ── Client-only layout: modals, chatbot, PWA install, streak sync ── */}
             <ClientLayout />
@@ -182,12 +395,16 @@ export default function RootLayout({ children }) {
             {/* ── Back-to-top floating button ── */}
             <BackToTop />
 
+
             {/* ── Screen-reader route announcer for accessibility ── */}
             <RouteAnnouncer />
             <OfflineIndicator />
 
             {/* Single Toaster configuration */}
+<<<<<<< HEAD
 >>>>>>> upstream/master
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
             <Toaster
               position="top-right"
               toastOptions={{
@@ -196,18 +413,26 @@ export default function RootLayout({ children }) {
               }}
             />
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
             <OfflineIndicator />
             <CommandPaletteWrapper />
             
             {/* 🚀 ADDED: System Shortcuts Modal integration layer */}
             <ShortcutsModal />
+<<<<<<< HEAD
 =======
             
             <CommandPalette />
 >>>>>>> upstream/master
+=======
+
+            <CommandPalette />
+>>>>>>> 148a7889b85a493e51b548db69afb7482d0d305d
           </Suspense>
-          </AllProviders>
-                      
+        </AllProviders>
+
       </body>
     </html>
   );
