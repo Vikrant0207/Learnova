@@ -196,6 +196,27 @@ export const signupWithEmail = async (
 
 export const loginWithGoogle = async (selectedRole, isLogin, additionalData) => {
   try {
+    // INTERCEPT FOR MOCK AUTH MODE
+    if (isMockAuthMode) {
+      console.log(`[Mock Auth] Simulating Google Sign-In as: ${selectedRole || "student"}`);
+      
+      // Simulate a small network delay for realistic UI loading states/spinners
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Construct a mock profile that mimics what your application context expects downstream
+      const simulatedUserData = {
+        ...MOCK_USER,
+        role: selectedRole || MOCK_USER.role,
+        fullName: MOCK_USER.displayName,
+        lastLogin: new Date(),
+      };
+
+      return { 
+        success: true, 
+        userData: simulatedUserData 
+      };
+    }
+    
     if (!auth || !db) {
       return { success: false, error: FIREBASE_CONFIG_ERROR };
     }
