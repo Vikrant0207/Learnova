@@ -32,6 +32,8 @@ describe("Middleware Rate Limiting", () => {
       "/api/auth/forgot-password",
       "/api/auth/reset-password",
       "/api/auth/verify-otp",
+      "/api/auth/verify-email",
+      "/api/auth/logout",
     ];
 
     it("identifies all auth routes correctly", () => {
@@ -46,6 +48,8 @@ describe("Middleware Rate Limiting", () => {
       expect(isAuthRoute("/api/auth/reset-password")).toBe(true);
       expect(isAuthRoute("/api/auth/verify-otp")).toBe(true);
       expect(isAuthRoute("/api/auth/verify-otp/callback")).toBe(true);
+      expect(isAuthRoute("/api/auth/verify-email")).toBe(true);
+      expect(isAuthRoute("/api/auth/logout")).toBe(true);
     });
 
     it("does not match non-auth routes", () => {
