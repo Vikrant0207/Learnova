@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import dynamic from "next/dynamic";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
@@ -56,13 +56,17 @@ const InstallPWA = dynamic(() => import("@/components/InstallPWA"), {
   loading: () => null,
 });
 
-const LearnovaChatbot = dynamic(() => import("@/components/ChatBot"), {
+const LearnovaChatbot = dynamic(() => import("@/components/LearnovaChatbot"), {
   ssr: false,
   loading: () => null,
 });
 
-export default function ClientLayout() {
+export default function ClientLayout({ children }) {
   const [modalState, dispatch] = useReducer(modalReducer, modalInitialState);
+  
+  // Visibility state tracking logic for Nova Chat Modal
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  
   const { user, userProfile } = useAuth();
 
   useOfflineQueue();
@@ -78,6 +82,7 @@ export default function ClientLayout() {
 
   const handleEscape = useCallback(() => {
     dispatch({ type: "CLOSE_ALL" });
+    setIsChatOpen(false); 
     window.dispatchEvent(new CustomEvent("learnova:escape"));
   }, []);
 
@@ -174,6 +179,7 @@ export default function ClientLayout() {
         const localToday = new Date(today.getTime() - (offset * 60 * 1000));
         const todayDateStr = localToday.toISOString().split("T")[0];
 
+        let clientStreak = parseInt(localStorage.getItem("learnova_site_streak") || "0", 10);
         // 1. Get client-side localStorage values
         let clientStreak = normalizeStreakCount(
           localStorage.getItem("learnova_site_streak"),
@@ -188,6 +194,7 @@ export default function ClientLayout() {
         }
         if (!Array.isArray(clientHistory)) clientHistory = [];
 
+        const firestoreStreak = userProfile?.siteStreak || 0;
         // 2. Fetch Firestore profile variables
         const firestoreStreak = normalizeStreakCount(userProfile?.siteStreak);
         const firestoreLastVisit = userProfile?.siteLastVisit || "";
@@ -197,8 +204,6 @@ export default function ClientLayout() {
         let lastVisit = clientLastVisit;
         let history = [...clientHistory];
 
-        // 3. Bidirectional Sync & Restore Logic
-        // Case A: Device has no streak records, but Firestore does! (New device login / local storage cleared)
         if (!lastVisit && firestoreLastVisit) {
           currentStreak = firestoreStreak;
           lastVisit = firestoreLastVisit;
@@ -209,12 +214,10 @@ export default function ClientLayout() {
           localStorage.setItem("learnova_site_visit_history", JSON.stringify(history));
         }
 
-        // Case B: Process today's check-in if last visit is different
         if (lastVisit !== todayDateStr) {
           let updatedStreak = currentStreak;
           
           if (!lastVisit) {
-            // New streak initialization
             updatedStreak = 1;
           } else {
             const lastVisitDate = new Date(lastVisit);
@@ -223,10 +226,8 @@ export default function ClientLayout() {
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
-              // Consecutive check-in
               updatedStreak += 1;
             } else if (diffDays > 1) {
-              // Streak broken
               updatedStreak = 1;
             }
           }
@@ -241,12 +242,10 @@ export default function ClientLayout() {
           currentStreak = updatedStreak;
           lastVisit = todayDateStr;
 
-          // Save to LocalStorage
           localStorage.setItem("learnova_site_streak", currentStreak.toString());
           localStorage.setItem("learnova_site_last_visit", lastVisit);
           localStorage.setItem("learnova_site_visit_history", JSON.stringify(history));
 
-          // Trigger a beautiful notification
           if (currentStreak > 1) {
             toast.success(`🔥 Blazing visit streak! ${currentStreak} consecutive days. Keep it up!`, {
               icon: "🔥",
@@ -259,14 +258,12 @@ export default function ClientLayout() {
             });
           }
         } else {
-          // Same day visit, ensure today is in history
           if (!history.includes(todayDateStr)) {
             history.push(todayDateStr);
             localStorage.setItem("learnova_site_visit_history", JSON.stringify(history));
           }
         }
 
-        // 4. Update Firestore if the local variables differ from Firestore to keep them perfectly in sync
         const needsSync = 
           currentStreak !== firestoreStreak ||
           lastVisit !== firestoreLastVisit ||
@@ -291,7 +288,6 @@ console.log("[streak-sync] Firestore updated successfully.");
       }
     };
 
-    // Delay slightly to allow auth profile variables to load properly
     const timer = setTimeout(syncStreak, 1500);
     return () => clearTimeout(timer);
   }, [user, userProfile]);
@@ -306,6 +302,8 @@ console.log("[streak-sync] Firestore updated successfully.");
 
   return (
     <>
+      {children}
+      
       <InstallPWA />
       <ShortcutsModal
         isOpen={modalState.isShortcutsOpen}
@@ -315,8 +313,15 @@ console.log("[streak-sync] Firestore updated successfully.");
         isOpen={modalState.isSearchOpen}
         onClose={() => dispatch({ type: "CLOSE_ALL" })}
       />
+      
+      {/* 💥 DEAD SPARKLE FLOATING BUTTON REMOVED FROM HERE FOR CLEAN VIEWPORT CONTROL */}
+
       <ErrorBoundary>
-        <LearnovaChatbot />
+        <LearnovaChatbot 
+          isOpen={isChatOpen}
+          user={user}
+          onClose={() => setIsChatOpen(false)}
+        />
       </ErrorBoundary>
     </>
   );

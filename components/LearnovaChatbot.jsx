@@ -25,10 +25,8 @@ import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 
 import { useAuthContext } from "@/contexts/AuthContext";
-// 🛠️ STEP 1 IMPORT: Bring in your local fallback Intent Router interface
+// 🛠️ Local Fallback Intent Router Interface
 import { parseUserIntent } from "@/services/ai-agent/intentparser.js";
-import { apiFetch } from "@/lib/apiClient";
-
 
 // ---------------------------------------------------------------------------
 // Constants — centralized
@@ -256,11 +254,55 @@ const CodeBlock = ({ language, code }) => {
 };
 
 // ---------------------------------------------------------------------------
+// 📊 Custom Dashboard Layout Card for Intercepted Metrics Data
+// ---------------------------------------------------------------------------
+const AttendanceTable = ({ students }) => {
+  if (!students || !Array.isArray(students)) return null;
+  
+  return (
+    <div className="my-3 overflow-hidden rounded-xl border border-purple-500/20 bg-gray-950/70 backdrop-blur-md shadow-md max-w-full">
+      <div className="bg-purple-950/40 px-3 py-2 border-b border-purple-500/20 text-[11px] font-semibold text-purple-300 tracking-wide select-none">
+        ⚠️ HIGH PRIORITY: ATTENDANCE INTERVENTION LOGS
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left font-sans text-xs">
+          <thead>
+            <tr className="bg-black/20 text-gray-400 border-b border-white/5">
+              <th className="p-2.5 font-medium">Student ID</th>
+              <th className="p-2.5 font-medium">Full Name</th>
+              <th className="p-2.5 font-medium text-right">Attendance</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {students.map((student) => (
+              <tr key={student.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="p-2.5 font-mono text-[11px] text-gray-400">{student.id}</td>
+                <td className="p-2.5 font-medium text-gray-200">{student.name}</td>
+                <td className="p-2.5 text-right">
+                  <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                    student.status?.toLowerCase().includes("critical") 
+                      ? "bg-red-500/15 text-red-400 border border-red-500/20" 
+                      : "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                  }`}>
+                    {student.attendance}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // Bot response logic
 // ---------------------------------------------------------------------------
 async function generateBotResponse(userMessage, currentCategory, idToken, updatedMessages = []) {
   const lower = userMessage.toLowerCase();
 
+  // 1. Static checks run instantly, independent of authentication states
   if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
     return "Hello! Welcome to Learnova — your Smart Student Engagement Ecosystem! I'm Nova, and I'm here to help:\n\n🎯 **Attendance Automation** — GPS + Time + Optional QR validation\n📚 **Smart Activities** — Turn idle hours into learning hours\n🔒 **Advanced Security** — Multi-factor authentication & encryption\n📊 **Analytics Dashboard** — Real-time insights for all stakeholders\n\nWhat would you like to explore first?";
   }
@@ -276,7 +318,7 @@ async function generateBotResponse(userMessage, currentCategory, idToken, update
   if (lower.includes("dashboard") || lower.includes("analytics") || lower.includes("report") || lower.includes("insight")) {
     return `📊 **Analytics & Dashboards**\n\n**Available Dashboards:**\n${learnovaKnowledge.analytics.dashboards.map((d) => `• ${d}`).join("\n")}\n\n**Key Metrics:**\n• Attendance patterns and trends\n• Activity engagement rates\n• Learning progress tracking\n• Time utilization analysis\n• Performance predictions\n\n**Export Options:** CSV, PDF, Excel formats | Scheduled automated reports | Custom report builder\n\nWhich dashboard would you like to learn more about?`;
   }
-  if (lower.includes("technical") || lower.includes("technology") || lower.includes("stack") || lower.includes("api")) {
+  if (lower.includes("tech") || lower.includes("technical") || lower.includes("technology") || lower.includes("stack") || lower.includes("api")) {
     return `⚙️ **Technical Specifications**\n\n**Frontend:** ${learnovaKnowledge.technology.frontend}\n**Backend:** ${learnovaKnowledge.technology.backend}\n**AI Engine:** ${learnovaKnowledge.technology.ai}\n**Security:** ${learnovaKnowledge.technology.security}\n**Deployment:** ${learnovaKnowledge.technology.deployment}\n\n**Key Features:** PWA | Offline-first | Cross-platform | Real-time sync | Scalable microservices | RESTful + GraphQL APIs\n\nNeed more details about any specific component?`;
   }
   if (lower.includes("price") || lower.includes("cost") || lower.includes("plan") || lower.includes("subscription")) {
@@ -289,28 +331,31 @@ async function generateBotResponse(userMessage, currentCategory, idToken, update
     return `🛟 **Support & Contact**\n\n📧 **Email:** ${CONTACT_INFO.email}\n📞 **Phone:** ${CONTACT_INFO.phone}\n🌐 **Website:** ${CONTACT_INFO.website}\n🎯 **Live Demo:** ${CONTACT_INFO.demo}\n\n**Response Times:**\n• General inquiries: Within 4 hours\n• Technical issues: Within 2 hours\n• Urgent/Critical: Within 30 minutes\n\nHow can I connect you with the right channel?`;
   }
 
-  try {
-    const headers = { "Content-Type": "application/json" };
-    if (idToken) headers["Authorization"] = `Bearer ${idToken}`;
-    
-    const response = await apiFetch("/api/groq", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ 
-        messages: updatedMessages.map(msg => ({
-          role: msg.isBot ? "assistant" : "user",
-          content: msg.text
-        })), 
-        category: currentCategory 
-      }),
-    });
+  // 2. Only run the network database fallback if a valid session is open
+  if (idToken) {
+    try {
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ 
+          messages: updatedMessages.map(msg => ({
+            role: msg.isBot ? "assistant" : "user",
+            content: msg.text
+          })), 
+          category: currentCategory 
+        }),
+      });
 
-    if (response.ok) {
-      const payload = await response.json();
-      return payload?.data?.message || payload?.message;
+      if (response.ok) {
+        const payload = await response.json();
+        return payload?.data?.message || payload?.message;
+      }
+    } catch (apiErr) {
+      console.error("API Fetch Error:", apiErr);
     }
-  } catch {
-    // Fall-through to safety defaults
   }
 
   return fallbackResponses[currentCategory] ?? fallbackResponses.general;
@@ -319,15 +364,11 @@ async function generateBotResponse(userMessage, currentCategory, idToken, update
 // ---------------------------------------------------------------------------
 // Save conversation helper
 // ---------------------------------------------------------------------------
-async function saveConversation(userText, botText, idToken) {
-  if (!idToken) return;
+async function saveConversation(userText, botText) {
   try {
-    await apiFetch("/api/conversations", {
+    await fetch("/api/conversations", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userMessage: userText, botMessage: botText }),
     });
   } catch {
@@ -405,9 +446,39 @@ export default function LearnovaChatbot() {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("general");
   const [isScrolling, setIsScrolling] = useState(false);
+
+  // MongoDB Sync State Tracking Hooks
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+  // Fetch callback handler pulling recent activity logs from MongoDB endpoint
+  const fetchChatHistory = useCallback(async () => {
+    if (!user) return;
+    setIsHistoryLoading(true);
+    try {
+      const response = await fetch("/api/conversations");
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setChatHistory(result.data);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to recover user chat logs:", error);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [user]);
+
+  // Lifecycle watcher syncing background drawer items when conversation view triggers
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchChatHistory();
+    }
+  }, [isOpen, user, fetchChatHistory]);
 
   useEffect(() => {
     let scrollTimeout;
@@ -429,99 +500,15 @@ export default function LearnovaChatbot() {
   const userHasScrolledUp = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchHistory = async () => {
-      if (!user || !isOpen) {
-        if (!user) {
-          setMessages([
-            {
-              id: "welcome",
-              text: getContextWelcomeMessage(),
-              isBot: true,
-              timestamp: new Date(),
-            }
-          ]);
-        }
-        return;
+    setMessages([
+      {
+        id: Date.now(),
+        text: getContextWelcomeMessage(),
+        isBot: true,
+        timestamp: new Date(),
       }
-
-      setIsHistoryLoading(true);
-      try {
-        const idToken = await user.getIdToken();
-        const response = await apiFetch("/api/conversations", {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
-
-        if (!isMounted) return;
-
-        if (response.ok) {
-          const payload = await response.json();
-          const history = payload?.data || [];
-          if (history.length > 0) {
-            const historyMessages = [];
-            history.forEach((conv, index) => {
-              historyMessages.push({
-                id: conv._id ? `${conv._id}-user` : `hist-${index}-user`,
-                text: conv.userMessage,
-                isBot: false,
-                timestamp: new Date(conv.timestamp),
-              });
-              historyMessages.push({
-                id: conv._id ? `${conv._id}-bot` : `hist-${index}-bot`,
-                text: conv.botMessage,
-                isBot: true,
-                timestamp: new Date(conv.timestamp),
-              });
-            });
-            setMessages(historyMessages);
-          } else {
-            setMessages([
-              {
-                id: "welcome",
-                text: getContextWelcomeMessage(),
-                isBot: true,
-                timestamp: new Date(),
-              }
-            ]);
-          }
-        } else {
-          setMessages([
-            {
-              id: "welcome",
-              text: getContextWelcomeMessage(),
-              isBot: true,
-              timestamp: new Date(),
-            }
-          ]);
-        }
-      } catch (error) {
-        console.error("Error loading chat history:", error);
-        if (isMounted) {
-          setMessages([
-            {
-              id: "welcome",
-              text: getContextWelcomeMessage(),
-              isBot: true,
-              timestamp: new Date(),
-            }
-          ]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsHistoryLoading(false);
-        }
-      }
-    };
-
-    fetchHistory();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, isOpen, getContextWelcomeMessage]);
+    ]);
+  }, [getContextWelcomeMessage]);
 
   useEffect(() => {
     if (!inputMessage && textareaRef.current) {
@@ -529,7 +516,7 @@ export default function LearnovaChatbot() {
     }
   }, [inputMessage]);
 
-  const handleScroll = () => {
+  const handleScrollState = () => {
     const container = messagesContainerRef.current;
     if (!container) return;
     const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 40;
@@ -540,13 +527,13 @@ export default function LearnovaChatbot() {
     if (!isOpen || isMinimized) return;
     if (userHasScrolledUp.current) return;
 
-    const container = messagesContainerRef.current;
-    if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth"
-      });
-    }
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages, isOpen, isMinimized, isLoading]);
 
   const handleInputChange = (e) => {
@@ -574,7 +561,7 @@ export default function LearnovaChatbot() {
   const handleSendMessage = useCallback(
     async (messageText) => {
       const text = (typeof messageText === "string" ? messageText : inputMessage).trim();
-      if (!text || text.length > 1000 || isLoading) return;
+      if (!text || isLoading) return;
 
       const userMsg = {
         id: Date.now(),
@@ -589,37 +576,53 @@ export default function LearnovaChatbot() {
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       setIsLoading(true);
 
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 400));
 
       let botText = "";
-      let idToken = null;
-      try {
-        if (!user) {
-          botText = "[**Please sign in**](/auth) to use the AI chatbot.";
-        } else {
-          // 🛠️ STEP 2 INTERCEPT: Check text signature against local action handlers first!
-          const actionResponse = await parseUserIntent(text);
-          const parsedResult = JSON.parse(actionResponse);
+      let interceptedData = null;
 
-          if (parsedResult.status === 'success') {
-            // Found a registry tool trigger match. Format the raw output nicely for render view
-            botText = `🤖 **Action Handler Initiated Successfully**\n\n\`\`\`json\n${JSON.stringify(parsedResult, null, 2)}\n\`\`\``;
-          } else {
-            // No local action regex matched. Fall through safely to normal processing pipeline
-            const idToken = await user.getIdToken();
-            botText = await generateBotResponse(text, currentCategory, idToken, [...messages, userMsg]);
+      try {
+        let actionResponse = null;
+
+        // Isolate parser from unauthorized invocation failures
+        if (user) {
+          try {
+            actionResponse = await parseUserIntent(text);
+          } catch (e) {
+            console.error("Local intent parser dropped:", e);
           }
-          idToken = await user.getIdToken();
-          botText = await generateBotResponse(text, currentCategory, idToken, [...messages, userMsg]);
         }
-      } catch {
-        botText = `I apologize for the technical difficulty. Our team is here to help:\n\n📧 **Email:** ${CONTACT_INFO.email}\n📞 **Phone:** ${CONTACT_INFO.phone}\n🎯 **Live Demo:** ${CONTACT_INFO.demo}`;
+
+        if (actionResponse && (actionResponse.matched || actionResponse.success)) {
+          botText = `I intercepted an architectural lookup event matching your request parameter criteria. Here are the target profiles retrieved from infrastructure indexing:`;
+          interceptedData = actionResponse.data;
+        } else {
+          let idToken = null;
+          if (user) {
+            try { idToken = await user.getIdToken(); } catch {}
+          }
+
+          // Fetch evaluation parameters
+          const resolvedString = await generateBotResponse(text, currentCategory, idToken, [...messages, userMsg]);
+
+          // Handle Guest authentication walls safely
+          const defaultFallback = fallbackResponses[currentCategory] ?? fallbackResponses.general;
+          if (!user && resolvedString === defaultFallback) {
+            botText = "Please [**sign in**](/auth) to use the conversational AI chatbot features.";
+          } else {
+            botText = resolvedString;
+          }
+        }
+      } catch (err) {
+        console.error("Pipeline failure running local handlers:", err);
+        botText = "I ran into an unexpected error processing that. Could you try asking again?";
       }
 
       const botMsg = {
         id: Date.now() + 1,
         text: botText,
         isBot: true,
+        toolData: interceptedData,
         timestamp: new Date(),
       };
 
@@ -627,11 +630,14 @@ export default function LearnovaChatbot() {
       setMessages((prev) => [...prev, botMsg]);
       setIsLoading(false);
 
-      if (idToken) {
-        await saveConversation(text, botText, idToken);
+      if (user) {
+        try {
+          await saveConversation(text, botText);
+          fetchChatHistory();
+        } catch {}
       }
     },
-    [inputMessage, isLoading, currentCategory, user, messages]
+    [inputMessage, isLoading, currentCategory, user, messages, fetchChatHistory]
   );
 
   const handleKeyDown = (e) => {
@@ -681,7 +687,7 @@ export default function LearnovaChatbot() {
       <div className={`fixed z-50 transition-all duration-300 right-4 md:right-6 ${isScrolling ? 'bottom-16 opacity-40 scale-90 md:bottom-6 md:opacity-100 md:scale-100' : 'bottom-24 md:bottom-6 opacity-100 scale-100'}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="relative bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group"
+          className="relative bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 group cursor-pointer"
           aria-label="Open Nova chat"
         >
           <MessageCircle size={24} />
@@ -703,7 +709,7 @@ export default function LearnovaChatbot() {
       }`}
     >
       {/* Header */}
-      <div className={`${themeTokens.header} text-white p-4 rounded-t-xl flex items-center justify-between shrink-0`}>
+      <div className={`${themeTokens.header} text-white p-4 rounded-t-xl flex items-center justify-between shrink-0 select-none`}>
         <div className="flex items-center space-x-3">
           <div className="relative">
             <Bot className="text-yellow-300" size={22} />
@@ -718,16 +724,26 @@ export default function LearnovaChatbot() {
         </div>
 
         <div className="flex items-center space-x-1">
-          <button onClick={clearChat} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Clear chat" aria-label="Clear chat">
+          <button onClick={clearChat} className="hover:bg-white/20 p-2 rounded-lg transition-colors cursor-pointer" title="Clear chat" aria-label="Clear chat">
             <RefreshCw size={16} />
           </button>
-          <button onClick={() => setTheme(isDarkMode ? "light" : "dark")} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Toggle theme" aria-label="Toggle theme">
+          
+          <button 
+            onClick={() => setIsHistoryOpen(!isHistoryOpen)} 
+            className="hover:bg-white/20 p-2 rounded-lg transition-colors cursor-pointer" 
+            title="Chat History"
+            aria-label="Toggle history panel"
+          >
+            <BookOpen size={16} className={isHistoryOpen ? "text-yellow-300" : "text-white"} />
+          </button>
+
+          <button onClick={() => setTheme(isDarkMode ? "light" : "dark")} className="hover:bg-white/20 p-2 rounded-lg transition-colors cursor-pointer" title="Toggle theme" aria-label="Toggle theme">
             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <button onClick={() => setIsMinimized(!isMinimized)} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title={isMinimized ? "Expand" : "Minimize"} aria-label={isMinimized ? "Expand chat" : "Minimize chat"}>
+          <button onClick={() => setIsMinimized(!isMinimized)} className="hover:bg-white/20 p-2 rounded-lg transition-colors cursor-pointer" title={isMinimized ? "Expand" : "Minimize"} aria-label={isMinimized ? "Expand chat" : "Minimize chat"}>
             {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>
-          <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 sm:p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Close" aria-label="Close chat">
+          <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 sm:p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer" title="Close" aria-label="Close chat">
             <X size={20} className="sm:w-4 sm:h-4" />
           </button>
         </div>
@@ -744,7 +760,7 @@ export default function LearnovaChatbot() {
                   <button
                     key={cat.id}
                     onClick={() => setCurrentCategory(cat.id)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 whitespace-nowrap cursor-pointer ${
                       currentCategory === cat.id ? themeTokens.catBtnActive : themeTokens.catBtn
                     }`}
                   >
@@ -756,129 +772,133 @@ export default function LearnovaChatbot() {
             </div>
           </div>
 
-          {/* Messages Stream Container */}
-          <div
-            ref={messagesContainerRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 select-text"
-          >
-            {isHistoryLoading ? (
-              <div className="flex flex-col items-center justify-center h-full space-y-2 text-gray-500">
-                <RefreshCw size={24} className="animate-spin text-purple-500" />
-                <span className="text-xs">Loading conversation history...</span>
-              </div>
-            ) : (
-              <>
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex items-start space-x-2.5 ${msg.isBot ? "" : "flex-row-reverse space-x-reverse"}`}>
-                    <div className={`p-2 rounded-xl shrink-0 ${msg.isBot ? themeTokens.botAvatar : themeTokens.userAvatar}`}>
-                      {msg.isBot ? <Bot size={16} /> : <User size={16} />}
+          {/* Core Chat Interface Canvas Viewport */}
+          <div className="flex-1 relative overflow-hidden flex">
+            {/* History Sidebar Panel Slider Overlay */}
+            {isHistoryOpen && (
+              <div className={`absolute inset-0 z-10 flex flex-col border-r shadow-xl animate-in slide-in-from-left duration-250 ${isDarkMode ? 'bg-gray-950 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="p-3 border-b flex items-center justify-between font-semibold text-sm border-inherit select-none">
+                  <span className="flex items-center gap-1.5 text-purple-400"><BookOpen size={16} /> Activity History Log</span>
+                  <button onClick={() => setIsHistoryOpen(false)} className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"><X size={16} /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-none">
+                  {isHistoryLoading ? (
+                    <div className="text-xs text-gray-500 text-center py-8 flex items-center justify-center gap-2">
+                      <RefreshCw size={14} className="animate-spin" /> Fetching recent nodes...
                     </div>
-                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-all duration-200 ${msg.isBot ? themeTokens.botMsg : themeTokens.userMsg}`}>
-                      {msg.isBot ? (
-                        <ReactMarkdown components={markdownComponents}>{msg.text}</ReactMarkdown>
-                      ) : (
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</p>
-                      )}
-                    </div>
-                  </div>
+                  ) : chatHistory.length === 0 ? (
+                    <div className="text-xs text-gray-500 text-center py-8">No previous structural logs matched under this session.</div>
+                  ) : (
+                    chatHistory.map((session, index) => (
+                      <div 
+                        key={index} 
+                        onClick={() => {
+                          handleSendMessage(session.userMessage);
+                          setIsHistoryOpen(false);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                          isDarkMode ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]' : 'bg-white border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <p className="font-medium truncate text-purple-400 mb-0.5">💬 {session.userMessage}</p>
+                        <p className="text-gray-400 dark:text-gray-500 line-clamp-2 text-[11px] leading-relaxed">{session.botMessage}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Suggested Questions Area */}
-          <div className={`p-3 border-t ${themeTokens.border} shrink-0 space-y-2`}>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto scrollbar-none">
-              {suggestedQuestions[currentCategory]?.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSendMessage(q)}
-                  className={`text-left px-2.5 py-1 rounded-lg text-xs transition-all duration-150 cursor-pointer ${themeTokens.suggestion}`}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Input Box Actions */}
-            <div className="flex items-end space-x-2 pt-1">
-              <div className="relative flex-1">
-                <textarea
-                  ref={textareaRef}
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message here..."
-                  rows={1}
-                  className={`w-full pr-10 pl-3 py-2 rounded-xl text-sm border resize-none focus:outline-none scrollbar-none transition-all duration-200 ${themeTokens.input}`}
-                  style={{ minHeight: "38px", maxHeight: "120px" }}
-                />
-              </div>
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim() || isLoading}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-xl hover:opacity-95 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all cursor-pointer shadow-md shrink-0"
-                ))}
-
-                {isLoading && (
-                  <div className="flex items-start space-x-2.5">
-                    <div className={`p-2 rounded-xl shrink-0 ${themeTokens.botAvatar}`}>
+            {/* Conversation Feed Thread Stream */}
+            <div 
+              ref={messagesContainerRef}
+              onScroll={handleScrollState}
+              className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-none select-text"
+            >
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.isBot ? "justify-start" : "justify-end"} items-start space-x-2.5`}>
+                  {msg.isBot && (
+                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 select-none ${themeTokens.botAvatar}`}>
                       <Bot size={16} />
                     </div>
-                    <div className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${themeTokens.loading}`}>
-                      <div className="flex space-x-1 items-center h-4 select-none">
-                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-100 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
-                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-200 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
-                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-300 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  )}
+                  <div className="flex flex-col max-w-[82%]">
+                    <div className={`p-3 rounded-2xl text-sm leading-relaxed ${msg.isBot ? themeTokens.botMsg : themeTokens.userMsg}`}>
+                      <ReactMarkdown components={markdownComponents}>
+                        {msg.text}
+                      </ReactMarkdown>
 
-                {/* Suggested Questions Pillar Context Chips */}
-                {suggestedQuestions[currentCategory] && messages.length <= 1 && (
-                  <div className="pt-2 space-y-2">
-                    <p className="text-[11px] font-semibold tracking-wider uppercase opacity-60 px-1">Suggested Questions</p>
-                    <div className="flex flex-col gap-2">
-                      {suggestedQuestions[currentCategory].map((q, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleSendMessage(q)}
-                          className={`text-left px-3 py-2 rounded-xl text-xs transition-all duration-200 cursor-pointer ${themeTokens.suggestion}`}
-                        >
-                          {q}
-                        </button>
-                      ))}
+                      {msg.isBot && msg.toolData && (
+                        <AttendanceTable students={msg.toolData} />
+                      )}
                     </div>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1 select-none">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                )}
-              </>
-            )}
+                  {!msg.isBot && (
+                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 select-none ${themeTokens.userAvatar}`}>
+                      <User size={16} />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="flex justify-start items-center space-x-2.5 animate-pulse select-none">
+                  <div className={`p-2 rounded-xl ${themeTokens.botAvatar}`}><Bot size={16} /></div>
+                  <div className={`px-4 py-3 rounded-2xl flex items-center space-x-1.5 ${themeTokens.loading}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full animate-bounce delay-100 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                    <span className={`w-1.5 h-1.5 rounded-full animate-bounce delay-200 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                    <span className={`w-1.5 h-1.5 rounded-full animate-bounce delay-300 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Form Input Submission Layout Control */}
-          <div className={`p-3 border-t ${themeTokens.border} shrink-0 bg-transparent`}>
-            <div className="flex items-end space-x-2 relative">
+          {/* Dynamic Prompt Suggestion Panel Row */}
+          {messages.length === 1 && (
+            <div className="px-4 py-2 shrink-0 select-none">
+              <p className="text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Suggested Queries:</p>
+              <div className="grid grid-cols-1 gap-1.5 max-h-24 overflow-y-auto scrollbar-none">
+                {suggestedQuestions[currentCategory]?.map((q, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendMessage(q)}
+                    className={`text-left text-xs p-2 rounded-xl border transition-all duration-150 truncate cursor-pointer ${themeTokens.suggestion}`}
+                  >
+                    💡 {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Interactive Chat Input Command Form Dock */}
+          <div className={`p-3 border-t ${themeTokens.border} shrink-0`}>
+            <div className="relative flex items-end bg-transparent">
               <textarea
                 ref={textareaRef}
                 rows={1}
                 value={inputMessage}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                maxLength={1000}
-                aria-label="Type your message to Nova"
-                placeholder={isHistoryLoading ? "Loading chat history..." : "Ask Nova a question..."}
-                disabled={isHistoryLoading || isLoading}
-                className={`flex-1 resize-none overflow-y-auto py-2.5 pl-4 pr-10 rounded-xl text-sm focus:outline-none transition-all duration-150 border max-h-32 ${themeTokens.input}`}
+                placeholder={`Message Nova (${currentCategory})...`}
+                className={`w-full max-h-28 pr-12 pl-4 py-2.5 rounded-xl border resize-none font-sans text-xs focus:outline-none transition-all outline-none leading-relaxed ${themeTokens.input}`}
+                style={{ height: 'auto' }}
               />
               <button
                 onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim() || isLoading || isHistoryLoading}
-                className="absolute right-2 bottom-2 p-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 disabled:hover:bg-purple-600 transition-colors cursor-pointer"
+                disabled={!inputMessage.trim() || isLoading}
+                className={`absolute right-2 bottom-1.5 p-1.5 rounded-lg transition-all duration-200 select-none ${
+                  inputMessage.trim() && !isLoading
+                    ? "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105 active:scale-95 cursor-pointer"
+                    : "text-gray-400 opacity-40 cursor-not-allowed"
+                }`}
                 aria-label="Send message"
               >
-                <Send size={16} />
+                <Send size={14} />
               </button>
             </div>
           </div>
