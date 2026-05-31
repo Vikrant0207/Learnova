@@ -42,7 +42,6 @@ import CommandPaletteWrapper from "@/components/CommandPaletteWrapper";
 import AllProviders from "./providers/AllProviders";
 
 // ─── SEO metadata & structured data ─────────────────────────────────────────
-export { metadata } from "@/lib/seo/siteMetadata";
 import { siteStructuredData } from "@/lib/seo/siteStructuredData";
 
 import NextTopLoader from "nextjs-toploader";
@@ -405,6 +404,7 @@ export default function RootLayout({ children }) {
 
             <CommandPalette />
 
+            <CommandPaletteWrapper />
           </Suspense>
         </AllProviders>
 

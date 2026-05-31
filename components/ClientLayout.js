@@ -9,9 +9,10 @@ import ShortcutsModal from "@/components/ShortcutsModal";
 import SearchModal from "@/components/SearchModal";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "react-hot-toast";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
+import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 
 const modalInitialState = {
   isShortcutsOpen: false,
@@ -62,6 +63,7 @@ export default function ClientLayout({ children }) {
   const { user, userProfile } = useAuth();
 
   useOfflineQueue();
+  useSessionMonitor();
 
   const handleSearch = useCallback(() => {
     dispatch({ type: "OPEN_SEARCH" });
@@ -104,6 +106,10 @@ export default function ClientLayout({ children }) {
         const todayDateStr = localToday.toISOString().split("T")[0];
 
         let clientStreak = parseInt(localStorage.getItem("learnova_site_streak") || "0", 10);
+        // 1. Get client-side localStorage values
+        let clientStreak = normalizeStreakCount(
+          localStorage.getItem("learnova_site_streak"),
+        );
         let clientLastVisit = localStorage.getItem("learnova_site_last_visit") || "";
         let clientHistory = [];
         try {
@@ -115,6 +121,8 @@ export default function ClientLayout({ children }) {
         if (!Array.isArray(clientHistory)) clientHistory = [];
 
         const firestoreStreak = userProfile?.siteStreak || 0;
+        // 2. Fetch Firestore profile variables
+        const firestoreStreak = normalizeStreakCount(userProfile?.siteStreak);
         const firestoreLastVisit = userProfile?.siteLastVisit || "";
         const firestoreHistory = userProfile?.siteVisitHistory || [];
 
@@ -189,11 +197,16 @@ export default function ClientLayout({ children }) {
 
         if (needsSync && user.uid) {
           const userDocRef = doc(db, "users", user.uid);
-          await updateDoc(userDocRef, {
-            siteStreak: currentStreak,
-            siteLastVisit: lastVisit,
-            siteVisitHistory: history,
-          });
+         await setDoc(
+  userDocRef,
+  {
+    siteStreak: currentStreak,
+    siteLastVisit: lastVisit,
+    siteVisitHistory: history,
+  },
+  { merge: true }
+);
+console.log("[streak-sync] Firestore updated successfully.");
         }
 
       } catch (error) {

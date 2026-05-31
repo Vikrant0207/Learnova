@@ -27,6 +27,8 @@ import { useTheme } from "next-themes";
 import { useAuthContext } from "@/contexts/AuthContext";
 // 🛠️ STEP 1 IMPORT: Bring in your local fallback Intent Router interface
 import { parseUserIntent } from "@/services/ai-agent/intentparser.js";
+import { apiFetch } from "@/lib/apiClient";
+
 
 // ---------------------------------------------------------------------------
 // Constants — centralized
@@ -291,7 +293,7 @@ async function generateBotResponse(userMessage, currentCategory, idToken, update
     const headers = { "Content-Type": "application/json" };
     if (idToken) headers["Authorization"] = `Bearer ${idToken}`;
     
-    const response = await fetch("/api/groq", {
+    const response = await apiFetch("/api/groq", {
       method: "POST",
       headers,
       body: JSON.stringify({ 
@@ -317,11 +319,15 @@ async function generateBotResponse(userMessage, currentCategory, idToken, update
 // ---------------------------------------------------------------------------
 // Save conversation helper
 // ---------------------------------------------------------------------------
-async function saveConversation(userText, botText) {
+async function saveConversation(userText, botText, idToken) {
+  if (!idToken) return;
   try {
-    await fetch("/api/conversations", {
+    await apiFetch("/api/conversations", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`,
+      },
       body: JSON.stringify({ userMessage: userText, botMessage: botText }),
     });
   } catch {
@@ -399,6 +405,7 @@ export default function LearnovaChatbot() {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("general");
   const [isScrolling, setIsScrolling] = useState(false);
 
@@ -422,15 +429,99 @@ export default function LearnovaChatbot() {
   const userHasScrolledUp = useRef(false);
 
   useEffect(() => {
-    setMessages([
-      {
-        id: Date.now(),
-        text: getContextWelcomeMessage(),
-        isBot: true,
-        timestamp: new Date(),
+    let isMounted = true;
+
+    const fetchHistory = async () => {
+      if (!user || !isOpen) {
+        if (!user) {
+          setMessages([
+            {
+              id: "welcome",
+              text: getContextWelcomeMessage(),
+              isBot: true,
+              timestamp: new Date(),
+            }
+          ]);
+        }
+        return;
       }
-    ]);
-  }, [getContextWelcomeMessage]);
+
+      setIsHistoryLoading(true);
+      try {
+        const idToken = await user.getIdToken();
+        const response = await apiFetch("/api/conversations", {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+
+        if (!isMounted) return;
+
+        if (response.ok) {
+          const payload = await response.json();
+          const history = payload?.data || [];
+          if (history.length > 0) {
+            const historyMessages = [];
+            history.forEach((conv, index) => {
+              historyMessages.push({
+                id: conv._id ? `${conv._id}-user` : `hist-${index}-user`,
+                text: conv.userMessage,
+                isBot: false,
+                timestamp: new Date(conv.timestamp),
+              });
+              historyMessages.push({
+                id: conv._id ? `${conv._id}-bot` : `hist-${index}-bot`,
+                text: conv.botMessage,
+                isBot: true,
+                timestamp: new Date(conv.timestamp),
+              });
+            });
+            setMessages(historyMessages);
+          } else {
+            setMessages([
+              {
+                id: "welcome",
+                text: getContextWelcomeMessage(),
+                isBot: true,
+                timestamp: new Date(),
+              }
+            ]);
+          }
+        } else {
+          setMessages([
+            {
+              id: "welcome",
+              text: getContextWelcomeMessage(),
+              isBot: true,
+              timestamp: new Date(),
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error("Error loading chat history:", error);
+        if (isMounted) {
+          setMessages([
+            {
+              id: "welcome",
+              text: getContextWelcomeMessage(),
+              isBot: true,
+              timestamp: new Date(),
+            }
+          ]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsHistoryLoading(false);
+        }
+      }
+    };
+
+    fetchHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, isOpen, getContextWelcomeMessage]);
 
   useEffect(() => {
     if (!inputMessage && textareaRef.current) {
@@ -483,7 +574,7 @@ export default function LearnovaChatbot() {
   const handleSendMessage = useCallback(
     async (messageText) => {
       const text = (typeof messageText === "string" ? messageText : inputMessage).trim();
-      if (!text || isLoading) return;
+      if (!text || text.length > 1000 || isLoading) return;
 
       const userMsg = {
         id: Date.now(),
@@ -501,6 +592,7 @@ export default function LearnovaChatbot() {
       await new Promise((r) => setTimeout(r, 600));
 
       let botText = "";
+      let idToken = null;
       try {
         if (!user) {
           botText = "[**Please sign in**](/auth) to use the AI chatbot.";
@@ -517,6 +609,8 @@ export default function LearnovaChatbot() {
             const idToken = await user.getIdToken();
             botText = await generateBotResponse(text, currentCategory, idToken, [...messages, userMsg]);
           }
+          idToken = await user.getIdToken();
+          botText = await generateBotResponse(text, currentCategory, idToken, [...messages, userMsg]);
         }
       } catch {
         botText = `I apologize for the technical difficulty. Our team is here to help:\n\n📧 **Email:** ${CONTACT_INFO.email}\n📞 **Phone:** ${CONTACT_INFO.phone}\n🎯 **Live Demo:** ${CONTACT_INFO.demo}`;
@@ -533,7 +627,9 @@ export default function LearnovaChatbot() {
       setMessages((prev) => [...prev, botMsg]);
       setIsLoading(false);
 
-      await saveConversation(text, botText);
+      if (idToken) {
+        await saveConversation(text, botText, idToken);
+      }
     },
     [inputMessage, isLoading, currentCategory, user, messages]
   );
@@ -666,31 +762,25 @@ export default function LearnovaChatbot() {
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 select-text"
           >
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex items-start space-x-2.5 ${msg.isBot ? "" : "flex-row-reverse space-x-reverse"}`}>
-                <div className={`p-2 rounded-xl shrink-0 ${msg.isBot ? themeTokens.botAvatar : themeTokens.userAvatar}`}>
-                  {msg.isBot ? <Bot size={16} /> : <User size={16} />}
-                </div>
-                <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-all duration-200 ${msg.isBot ? themeTokens.botMsg : themeTokens.userMsg}`}>
-                  {msg.isBot ? (
-                    <ReactMarkdown components={markdownComponents}>{msg.text}</ReactMarkdown>
-                  ) : (
-                    <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</p>
-                  )}
-                </div>
+            {isHistoryLoading ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-2 text-gray-500">
+                <RefreshCw size={24} className="animate-spin text-purple-500" />
+                <span className="text-xs">Loading conversation history...</span>
               </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex items-start space-x-2.5">
-                <div className={`p-2 rounded-xl shrink-0 ${themeTokens.botAvatar}`}>
-                  <Bot size={16} />
-                </div>
-                <div className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${themeTokens.loading}`}>
-                  <div className="flex space-x-1 items-center h-4 select-none">
-                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-100 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
-                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-200 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
-                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-300 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+            ) : (
+              <>
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex items-start space-x-2.5 ${msg.isBot ? "" : "flex-row-reverse space-x-reverse"}`}>
+                    <div className={`p-2 rounded-xl shrink-0 ${msg.isBot ? themeTokens.botAvatar : themeTokens.userAvatar}`}>
+                      {msg.isBot ? <Bot size={16} /> : <User size={16} />}
+                    </div>
+                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-all duration-200 ${msg.isBot ? themeTokens.botMsg : themeTokens.userMsg}`}>
+                      {msg.isBot ? (
+                        <ReactMarkdown components={markdownComponents}>{msg.text}</ReactMarkdown>
+                      ) : (
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -729,6 +819,63 @@ export default function LearnovaChatbot() {
                 onClick={() => handleSendMessage()}
                 disabled={!inputMessage.trim() || isLoading}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-2.5 rounded-xl hover:opacity-95 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all cursor-pointer shadow-md shrink-0"
+                ))}
+
+                {isLoading && (
+                  <div className="flex items-start space-x-2.5">
+                    <div className={`p-2 rounded-xl shrink-0 ${themeTokens.botAvatar}`}>
+                      <Bot size={16} />
+                    </div>
+                    <div className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${themeTokens.loading}`}>
+                      <div className="flex space-x-1 items-center h-4 select-none">
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-100 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-200 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-300 ${themeTokens.dot}`} style={{ backgroundColor: 'currentColor' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Questions Pillar Context Chips */}
+                {suggestedQuestions[currentCategory] && messages.length <= 1 && (
+                  <div className="pt-2 space-y-2">
+                    <p className="text-[11px] font-semibold tracking-wider uppercase opacity-60 px-1">Suggested Questions</p>
+                    <div className="flex flex-col gap-2">
+                      {suggestedQuestions[currentCategory].map((q, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSendMessage(q)}
+                          className={`text-left px-3 py-2 rounded-xl text-xs transition-all duration-200 cursor-pointer ${themeTokens.suggestion}`}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Form Input Submission Layout Control */}
+          <div className={`p-3 border-t ${themeTokens.border} shrink-0 bg-transparent`}>
+            <div className="flex items-end space-x-2 relative">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={inputMessage}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                maxLength={1000}
+                aria-label="Type your message to Nova"
+                placeholder={isHistoryLoading ? "Loading chat history..." : "Ask Nova a question..."}
+                disabled={isHistoryLoading || isLoading}
+                className={`flex-1 resize-none overflow-y-auto py-2.5 pl-4 pr-10 rounded-xl text-sm focus:outline-none transition-all duration-150 border max-h-32 ${themeTokens.input}`}
+              />
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={!inputMessage.trim() || isLoading || isHistoryLoading}
+                className="absolute right-2 bottom-2 p-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 disabled:hover:bg-purple-600 transition-colors cursor-pointer"
                 aria-label="Send message"
               >
                 <Send size={16} />
