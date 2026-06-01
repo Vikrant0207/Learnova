@@ -26,6 +26,18 @@ vi.mock("@/utils/authUtils", () => ({
   calculateDistance: () => 10,
 }));
 
+// Mock the apiClient so settings load successfully without real HTTP
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({
+      timeWindow: { start: "09:00", end: "10:00" },
+      gpsLocation: { lat: 12.9716, lng: 77.5946, radius: 100 },
+    }),
+    post: vi.fn(),
+  },
+  apiFetch: vi.fn(),
+}));
+
 describe("AttendanceValidation Exception Modal Focus Trap", () => {
   const mockOnValidationSuccess = vi.fn();
 

@@ -55,6 +55,7 @@ export const POST = withErrorHandler(async (request) => {
   const resolvedName = userProfile?.fullName || decodedToken.name || decodedToken.displayName || decodedToken.email?.split("@")[0] || "Unknown User";
   const resolvedEmail = userProfile?.email || decodedToken.email || "unknown@learnova.edu";
 
+  let alreadyRecorded = false;
   const sagaResult = await executeSaga({
     operationType: "attendance_record",
     uid: decodedToken.uid,
@@ -67,7 +68,7 @@ export const POST = withErrorHandler(async (request) => {
             const existingDoc = await transaction.get(docRef);
             if (existingDoc.exists) {
               // Mark as already recorded — don't throw (idempotent)
-              sagaResult._alreadyRecorded = true;
+              alreadyRecorded = true;
               return;
             }
 
@@ -93,7 +94,7 @@ export const POST = withErrorHandler(async (request) => {
       {
         name: "award_xp",
         execute: async () => {
-          if (sagaResult._alreadyRecorded) {
+          if (alreadyRecorded) {
             // Don't award XP if attendance was already recorded
             return;
           }
@@ -106,7 +107,7 @@ export const POST = withErrorHandler(async (request) => {
     ],
   });
 
-  if (sagaResult._alreadyRecorded) {
+  if (alreadyRecorded) {
     return jsonSuccess({ alreadyRecorded: true }, 200);
   }
 

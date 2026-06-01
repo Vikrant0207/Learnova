@@ -335,6 +335,9 @@ export const POST =
 
       const sagaKey = idempotencyKey || `register_${decodedToken.uid}_${Date.now()}`;
 
+      let uploadedBlobUrl = null;
+      let insertedUser = null;
+
       const sagaResult = await executeSaga({
         operationType: "register",
         uid: decodedToken.uid,
@@ -353,14 +356,14 @@ export const POST =
                       "public",
                   }
                 );
-              // Store blob URL on the saga context for subsequent steps
-              sagaResult._blobUrl = blob.url;
+              // Store blob URL on the scoped variable for subsequent steps
+              uploadedBlobUrl = blob.url;
               return blob;
             },
             compensate: async () => {
-              if (sagaResult._blobUrl) {
+              if (uploadedBlobUrl) {
                 try {
-                  await del(sagaResult._blobUrl);
+                  await del(uploadedBlobUrl);
                 } catch {}
               }
             },
@@ -372,7 +375,7 @@ export const POST =
                 name: sanitizedName,
                 rollNo: sanitizedRollNo,
                 email,
-                image: sagaResult._blobUrl,
+                image: uploadedBlobUrl,
                 firebaseUid: decodedToken.uid,
               };
 
@@ -385,7 +388,7 @@ export const POST =
                   user
                 );
 
-              sagaResult._insertedUser = {
+              insertedUser = {
                 _id: result.insertedId,
                 name: user.name,
                 rollNo: user.rollNo,
@@ -393,9 +396,9 @@ export const POST =
               };
             },
             compensate: async () => {
-              if (sagaResult._insertedUser?._id) {
+              if (insertedUser?._id) {
                 try {
-                  await users.deleteOne({ _id: sagaResult._insertedUser._id });
+                  await users.deleteOne({ _id: insertedUser._id });
                 } catch {}
               }
             },
@@ -413,7 +416,7 @@ export const POST =
 
       const resultPayload = {
         message: "User registered successfully",
-        user: sagaResult._insertedUser,
+        user: insertedUser,
       };
 
       // Mark as idempotent for retry dedup

@@ -73,7 +73,7 @@ describe("notifications seed route", () => {
   };
 
   test("successfully seeds notifications for own account", async () => {
-    authenticateRequest.mockResolvedValue({ uid: "user-123" });
+    authenticateRequest.mockResolvedValue({ uid: "user-123", email_verified: true });
     parseJSON.mockResolvedValue({ userId: "user-123" });
 
     const response = await POST(createMockRequest());
@@ -89,7 +89,7 @@ describe("notifications seed route", () => {
   });
 
   test("rejects request with 400 Bad Request if userId is missing from request body", async () => {
-    authenticateRequest.mockResolvedValue({ uid: "user-123" });
+    authenticateRequest.mockResolvedValue({ uid: "user-123", email_verified: true });
     parseJSON.mockResolvedValue({});
 
     const response = await POST(createMockRequest());
@@ -98,7 +98,7 @@ describe("notifications seed route", () => {
   });
 
   test("rejects request with 403 Forbidden if trying to seed notifications for another user", async () => {
-    authenticateRequest.mockResolvedValue({ uid: "user-123" });
+    authenticateRequest.mockResolvedValue({ uid: "user-123", email_verified: true });
     parseJSON.mockResolvedValue({ userId: "other-user-456" });
 
     const response = await POST(createMockRequest());
@@ -114,7 +114,7 @@ describe("notifications seed route", () => {
   });
 
   test("rejects request with 429 if rate limit is exceeded", async () => {
-    authenticateRequest.mockResolvedValue({ uid: "user-123" });
+    authenticateRequest.mockResolvedValue({ uid: "user-123", email_verified: true });
     parseJSON.mockResolvedValue({ userId: "user-123" });
     checkRateLimit.mockResolvedValue({ allowed: false });
 

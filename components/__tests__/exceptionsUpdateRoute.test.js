@@ -96,7 +96,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects request if user profile not found with 403", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue(null);
 
     const req = createMockRequest(
@@ -112,7 +112,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects standard student role with 403 Forbidden", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "student@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "student@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "student" });
 
     const req = createMockRequest(
@@ -128,7 +128,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects missing exceptionId with 400 Bad Request", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
 
     const req = createMockRequest(
@@ -144,7 +144,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects malformed ObjectId with 400 Bad Request", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
 
     const req = createMockRequest(
@@ -160,7 +160,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects invalid status (e.g. pending or custom string) with 400 Bad Request", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
 
     const req = createMockRequest(
@@ -176,7 +176,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects teacher modification if they teach a different class and don't share student subjects (IDOR protection)", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Data Structures"] });
     mockFindOne.mockResolvedValue({
       _id: "507f1f77bcf86cd799439011",
@@ -201,7 +201,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("accepts teacher modification if teacher teaches the class of the exception", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
     mockFindOne.mockResolvedValue({
       _id: "507f1f77bcf86cd799439011",
@@ -223,7 +223,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("accepts teacher modification as fallback if teacher shares a subject with the student", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "teacher-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Database Systems"] });
     mockFindOne.mockResolvedValue({
       _id: "507f1f77bcf86cd799439011",
@@ -249,7 +249,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("accepts admin modification unconditionally and logs audit entry with approver UID", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "admin" });
     mockFindOne.mockResolvedValue({
       _id: "507f1f77bcf86cd799439011",
@@ -282,7 +282,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("accepts valid request with empty or null comments", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "admin" });
     mockFindOne.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", studentEmail: "student@domain.com" });
     mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
@@ -298,7 +298,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("rejects request if status is entirely missing", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "admin-123", email: "admin@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "admin" });
 
     const req = createMockRequest(
@@ -313,7 +313,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("returns 404 if matching exception record not found", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
     mockFindOne.mockResolvedValue(null);
 
@@ -329,7 +329,7 @@ describe("PUT /api/exceptions/update - Security and Validation Tests", () => {
   });
 
   test("handles database query exceptions gracefully returning 500", async () => {
-    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com" } });
+    verifyFirebaseToken.mockResolvedValue({ valid: true, decodedToken: { uid: "user-123", email: "teacher@domain.com", email_verified: true } });
     getUserProfile.mockResolvedValue({ role: "teacher", subjects: ["Web Development"] });
     mockFindOne.mockRejectedValue(new Error("Database disconnected"));
 
