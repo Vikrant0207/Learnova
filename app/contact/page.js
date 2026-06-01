@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { CONTACT_INFO } from '@/constants/contact';
+import ContributorsShowcase from "@/components/ContributorsShowcase";
 import {
   Mail,
   Phone,
@@ -482,32 +483,38 @@ export default function Contact() {
                   </div>
                 </div>
 
-                {/* Social Links */}
-                <div className="bg-card backdrop-blur-xl rounded-3xl p-8 border border-border">
-                  <h3 className="text-2xl font-bold text-foreground mb-6">
-                    Follow Us
-                  </h3>
-
-                  <div className="flex gap-4">
-                    {socialLinks.map((social, index) => (
-                      <Link
-                        key={index}
-                        href={social.href}
-                        className={`w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-muted-foreground ${social.color} transition-all duration-300 hover:scale-110 hover:border-current`}
-                      >
-                        <social.icon className="w-6 h-6" />
-                      </Link>
-                    ))}
-                  </div>
-
-                  <p className="text-muted-foreground text-sm mt-4">
-                    Stay updated with our latest features and educational
-                    insights.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
+
+          {/* Follow Us - Full Width */}
+          <div className="w-full mt-10">
+            <div className="bg-card backdrop-blur-xl rounded-3xl p-8 border border-border">
+              <h3 className="text-2xl font-bold text-foreground mb-6">
+                Follow Us
+              </h3>
+
+              <div className="flex gap-4">
+                {socialLinks.map((social, index) => (
+                  <Link
+                    key={index}
+                    href={social.href}
+                    className={`w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-muted-foreground ${social.color} transition-all duration-300 hover:scale-110 hover:border-current`}
+                  >
+                    <social.icon className="w-6 h-6" />
+                  </Link>
+                ))}
+              </div>
+
+              <p className="text-muted-foreground text-sm mt-4">
+                Stay updated with our latest features and educational
+                insights.
+              </p>
+            </div>
+          </div>
+
+          {/* Contributors Showcase - Full Width */}
+          <ContributorsShowcase />
         </div>
       </div>
 
