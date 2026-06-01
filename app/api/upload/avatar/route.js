@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+
 export const POST = withErrorHandler(async (request) => {
   const decodedToken = await requireAuth(request);
 

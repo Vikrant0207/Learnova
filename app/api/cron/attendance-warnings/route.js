@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeCronRequest } from '@/lib/cronAuth';
 import { connectDb } from '@/lib/mongodb';
+import { getUserProfile } from '@/lib/firebase-admin';
 import { initializeFirebase } from '@/lib/firebase-admin';
 import admin from 'firebase-admin';
 import { evaluateStudentAttendance } from '@/lib/attendanceUtils';
@@ -18,6 +19,7 @@ export async function GET(request) {
     initializeFirebase();
     const firestore = admin.firestore();
 
+    // 1. Fetch settings for institutes that enabled automation
     // Fetch settings where attendance automation is enabled
     const allSettings = await db.collection('settings').find({
       'institute.enableAttendanceAutomation': true
@@ -27,19 +29,19 @@ export async function GET(request) {
       return NextResponse.json({ message: 'Automation is not enabled for any institute or no settings found.' });
     }
 
+    const now = new Date();
+    const cooldownPeriod = 7 * 24 * 60 * 60 * 1000;
+    const cooldownDate = new Date(now.getTime() - cooldownPeriod);
+
     const notificationsToInsert = [];
     const warningLogsToInsert = [];
     const emailsToSend = [];
-    
+
     for (const settings of allSettings) {
       const threshold = settings.institute.lowAttendanceThreshold || 75;
-      
+
       // Fetch all students from MongoDB
       const students = await db.collection('users').find({ role: 'student' }).toArray();
-      
-      const now = new Date();
-      const cooldownPeriod = 7 * 24 * 60 * 60 * 1000;
-      const cooldownDate = new Date(now.getTime() - cooldownPeriod);
 
       for (const student of students) {
         const studentUid = student.firebaseUid;
@@ -61,9 +63,9 @@ export async function GET(request) {
           .where('userId', '==', studentUid)
           .get();
 
-        const attendanceRecords = attendanceSnapshot.docs.map(doc => doc.data());
+        const studentAttendance = attendanceSnapshot.docs.map(doc => doc.data());
 
-        const evaluation = evaluateStudentAttendance(attendanceRecords, threshold);
+        const evaluation = evaluateStudentAttendance(studentAttendance, threshold);
 
         if (evaluation.isBelowThreshold) {
           notificationsToInsert.push({
@@ -72,14 +74,14 @@ export async function GET(request) {
             message: `Your current attendance is ${evaluation.percentage}%, which is below the required ${threshold}%. Please improve your attendance.`,
             type: 'warning',
             read: false,
-            createdAt: now
+            createdAt: now,
           });
 
           warningLogsToInsert.push({
             userId: studentUid,
             percentage: evaluation.percentage,
-            threshold: threshold,
-            createdAt: now
+            threshold,
+            createdAt: now,
           });
 
           if (student.email) {
@@ -87,7 +89,7 @@ export async function GET(request) {
               to_email: student.email,
               to_name: student.fullName || student.name || 'Student',
               attendance_percentage: evaluation.percentage,
-              threshold: threshold
+              threshold,
             });
           }
         }
@@ -111,8 +113,8 @@ export async function GET(request) {
               service_id: process.env.EMAILJS_SERVICE_ID,
               template_id: process.env.EMAILJS_TEMPLATE_ID,
               user_id: process.env.EMAILJS_PUBLIC_KEY,
-              template_params: emailData
-            })
+              template_params: emailData,
+            }),
           });
         } catch (error) {
           console.error(`Failed to send email to ${emailData.to_email}:`, error);
@@ -120,10 +122,10 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       warningsIssued: notificationsToInsert.length,
-      message: `Issued ${notificationsToInsert.length} warnings.`
+      message: `Issued ${notificationsToInsert.length} warnings.`,
     });
 
   } catch (error) {
