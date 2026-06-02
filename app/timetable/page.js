@@ -12,6 +12,7 @@ export default function TimetablePage() {
   const [progress, setProgress] = useState(0);
 
   const [roadmap, setRoadmap] = useState([]);
+  const [roadmapMessage, setRoadmapMessage] = useState("");
 
   const topicList = topics
     .split(",")
@@ -51,6 +52,19 @@ export default function TimetablePage() {
   }
 
   setRoadmap(generatedRoadmap);
+  if (level === "Beginner") {
+  setRoadmapMessage(
+    "Start with fundamentals and build strong problem-solving skills."
+  );
+} else if (level === "Intermediate") {
+  setRoadmapMessage(
+    "Focus on advanced concepts, projects, and interview preparation."
+  );
+} else {
+  setRoadmapMessage(
+    "Master system design, open source contributions, and career readiness."
+  );
+}
   setGenerated(true);
   setProgress(0);
   setMilestones([false, false, false, false]);
@@ -320,7 +334,28 @@ const toggleMilestone = (index) => {
         <strong>{topics}</strong>. Estimated preparation timeline:
         <strong> 10-14 weeks</strong>.
       </p>
+      <p className="text-sm mt-2">
+  {roadmapMessage}
+      </p>
     </div>
+    <div className="mt-4 border rounded-xl p-4">
+  <h3 className="font-semibold mb-2">
+    🎯 Next Recommendation
+  </h3>
+
+  {progress < 50 && (
+    <p>Complete foundation topics before moving to advanced concepts.</p>
+  )}
+
+  {progress >= 50 && progress < 100 && (
+    <p>You are ready to start solving advanced interview-level problems.</p>
+  )}
+
+  {progress === 100 && (
+    <p>Roadmap completed! Generate a new roadmap for the next level.</p>
+  )}
+</div>
+
   </>
 )}
       </div>
