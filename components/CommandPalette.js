@@ -68,11 +68,14 @@ const CommandPalette = ({ isOpen, onClose }) => {
   const flat = filtered;
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setQuery('');
-      setActiveIndex(0);
-    }
+    if (!isOpen) return;
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+
+    setQuery('');
+    setActiveIndex(0);
   }, [isOpen]);
 
   useEffect(() => {
@@ -101,7 +104,7 @@ const CommandPalette = ({ isOpen, onClose }) => {
     const el = listRef.current?.querySelector('[data-active="true"]');
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
-  
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
