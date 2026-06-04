@@ -55,7 +55,9 @@ async function getRecentWarningUserIds(db, userIds, cooldownDate) {
       createdAt: { $gte: cooldownDate },
     });
     const projectedCursor =
-      typeof cursor.project === "function" ? cursor.project({ userId: 1 }) : cursor;
+      typeof cursor.project === "function"
+        ? cursor.project({ userId: 1 })
+        : cursor;
     const recentLogs =
       typeof projectedCursor.toArray === "function"
         ? await projectedCursor.toArray()
@@ -193,6 +195,36 @@ export async function GET(request) {
       warningLogsToInsert = [];
     }
 
+    // Fetch all students with an instituteId once
+    const allStudents = await db
+      .collection("users")
+      .find({
+        role: "student",
+        instituteId: { $exists: true },
+      })
+      .toArray();
+
+    // Group students by instituteId
+    const studentsByInstitute = new Map();
+    for (const student of allStudents) {
+      const instId = student.instituteId;
+      if (!instId) continue;
+      if (!studentsByInstitute.has(instId)) {
+        studentsByInstitute.set(instId, []);
+      }
+      studentsByInstitute.get(instId).push(student);
+    }
+
+    // Collect all student UIDs for batch cooldown check
+    const allStudentUids = allStudents
+      .map((s) => s.firebaseUid)
+      .filter(Boolean);
+    const recentWarningUserIds = await getRecentWarningUserIds(
+      db,
+      allStudentUids,
+      cooldownDate
+    );
+
     for (const settings of allSettings) {
       const threshold = settings.institute.lowAttendanceThreshold || 75;
 
@@ -204,7 +236,11 @@ export async function GET(request) {
       // no students or incorrectly matching students from another institute if
       // two settings documents resolve to the same fallback key.
       const rawInstituteId = settings.instituteId;
-      if (!rawInstituteId || typeof rawInstituteId !== "string" || rawInstituteId.trim() === "") {
+      if (
+        !rawInstituteId ||
+        typeof rawInstituteId !== "string" ||
+        rawInstituteId.trim() === ""
+      ) {
         console.warn(
           "[attendance-warnings] Skipping settings document with missing or invalid instituteId",
           { settingsId: settings._id?.toString() }
@@ -240,8 +276,14 @@ export async function GET(request) {
             userRecords.push(record);
           }
       // Load attendance from MongoDB scoped to this institute only.
-      const instituteStudentUids = instituteStudents.map(s => s.firebaseUid).filter(Boolean);
-      const mongoAttendance = await loadMongoAttendanceByUser(db, instituteId, instituteStudentUids);
+      const instituteStudentUids = instituteStudents
+        .map((s) => s.firebaseUid)
+        .filter(Boolean);
+      const mongoAttendance = await loadMongoAttendanceByUser(
+        db,
+        instituteId,
+        instituteStudentUids
+      );
 
       // Build attendanceByUser from mongoAttendance
       const attendanceByUser = new Map();
@@ -288,6 +330,41 @@ export async function GET(request) {
             warningLogsToInsert.push({
               userId: uid,
               percentage: evaluation.percentage,
+        const uid = student.uid || student.firebaseUid;
+        if (!uid) continue;
+
+        // Use MongoDB attendance data (scoped by institute) instead of Firestore
+        const studentAttendance = attendanceByUser.get(uid) || [];
+        const evaluation = evaluateStudentAttendance(
+          studentAttendance,
+          threshold
+        );
+
+        if (evaluation.isBelowThreshold) {
+          const email = student.email;
+          const name = student.name || student.fullName || "Student";
+
+          notificationsToInsert.push({
+            userId: uid,
+            title: "Low Attendance Warning",
+            message: `Your current attendance is ${evaluation.percentage}%, which is below the required ${threshold}%. Please improve your attendance.`,
+            type: "warning",
+            read: false,
+            createdAt: now,
+          });
+
+          warningLogsToInsert.push({
+            userId: uid,
+            percentage: evaluation.percentage,
+            threshold,
+            createdAt: now,
+          });
+
+          if (email) {
+            emailsToSend.push({
+              to_email: email,
+              to_name: name,
+              attendance_percentage: evaluation.percentage,
               threshold,
               createdAt: now,
             });

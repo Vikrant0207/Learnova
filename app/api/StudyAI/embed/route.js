@@ -5,6 +5,7 @@ import {
   withErrorHandler,
 } from "@/lib/error-handler";
 import { requireAuth } from "@/lib/rbac";
+import { parseJSON, withErrorHandler } from "@/lib/error-handler";
 import { connectDb } from "@/lib/mongodb";
 
 export const dynamic = "force-dynamic";
