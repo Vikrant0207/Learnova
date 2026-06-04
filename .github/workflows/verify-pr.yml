@@ -25,6 +25,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: 🔧 Fix Rollup native binding (Linux CI)
+        run: |
+          ROLLUP_VER=$(node -p "require('./node_modules/rollup/package.json').version")
+          npm install --legacy-peer-deps --no-save "@rollup/rollup-linux-x64-gnu@${ROLLUP_VER}"
+
       - name: Verify Linter and Formatters
         run: npm run lint --if-present
 
