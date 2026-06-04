@@ -65,6 +65,11 @@ jobs:
           PARCEL_VER=$(node -p "require('./node_modules/@parcel/watcher/package.json').version")
           npm install --legacy-peer-deps --no-save "@parcel/watcher-linux-x64-glibc@${PARCEL_VER}"
 
+      - name: 🔧 Re-check Rollup native binding for build
+        run: |
+          ROLLUP_VER=$(node -p "require('./node_modules/rollup/package.json').version")
+          npm install --legacy-peer-deps --no-save "@rollup/rollup-linux-x64-gnu@${ROLLUP_VER}"
+
       - name: 🔨 Build project
         run: npm run build
         env:
