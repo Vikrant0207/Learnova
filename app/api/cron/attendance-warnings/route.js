@@ -195,8 +195,23 @@ export async function GET(request) {
 
     for (const settings of allSettings) {
       const threshold = settings.institute.lowAttendanceThreshold || 75;
-      const instituteId = settings.instituteId || settings._id?.toString() || settings.userId;
-      if (!instituteId) continue;
+
+      // Derive the institute ID from the settings document. instituteId is the
+      // canonical field; fall back to _id only when instituteId is absent.
+      // Reject any document whose instituteId cannot be determined as a
+      // non-empty string: processing it with an undefined or empty key would
+      // cause studentsByInstitute.get() to return undefined, silently matching
+      // no students or incorrectly matching students from another institute if
+      // two settings documents resolve to the same fallback key.
+      const rawInstituteId = settings.instituteId;
+      if (!rawInstituteId || typeof rawInstituteId !== "string" || rawInstituteId.trim() === "") {
+        console.warn(
+          "[attendance-warnings] Skipping settings document with missing or invalid instituteId",
+          { settingsId: settings._id?.toString() }
+        );
+        continue;
+      }
+      const instituteId = rawInstituteId.trim();
 
       // Fetch students for this institute only instead of loading all students globally
       const instituteStudents = await db.collection('users').find({
@@ -224,6 +239,23 @@ export async function GET(request) {
           if (userRecords) {
             userRecords.push(record);
           }
+      // Load attendance from MongoDB scoped to this institute only.
+      const instituteStudentUids = instituteStudents.map(s => s.firebaseUid).filter(Boolean);
+      const mongoAttendance = await loadMongoAttendanceByUser(db, instituteId, instituteStudentUids);
+
+      // Build attendanceByUser from mongoAttendance
+      const attendanceByUser = new Map();
+      for (const [uid, records] of mongoAttendance || []) {
+        attendanceByUser.set(uid, records);
+      }
+
+      for (const student of instituteStudents) {
+        const studentUid = student.firebaseUid;
+        if (!studentUid) continue;
+
+        // Skip if warned recently (batch cooldown check)
+        if (recentWarningUserIds.has(studentUid)) {
+          continue;
         }
 
         // Check cooldown for this batch only (scoped $in query)
