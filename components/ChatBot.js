@@ -374,6 +374,14 @@ async function generateBotResponse(
           content: msg.text,
         })),
         category: currentCategory,
+        context: user
+          ? {
+              uid: user.uid,
+              role: user.role,
+              name: user.displayName || user.name,
+              email: user.email,
+            }
+          : {},
       }),
     });
 
