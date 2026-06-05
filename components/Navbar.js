@@ -137,8 +137,10 @@ export function Navbar() {
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
+    // Initial check on mount or route change
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [pathname]);
 
   const handleClickOutside = useCallback((e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
