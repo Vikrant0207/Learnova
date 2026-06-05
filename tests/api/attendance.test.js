@@ -168,66 +168,12 @@ describe("Attendance Record API Route — POST /api/attendance/record", () => {
     expect(data).toHaveProperty("error");
   });
 
-<<<<<<< HEAD
-  it('returns 400 when confidenceScore is missing (undefined)', async () => {
-    authenticateRequest.mockResolvedValue({ uid: 'user-abc', email_verified: true });
-    parseJSON.mockResolvedValue({
-      userId: 'user-abc',
-      studentName: 'Test User',
-      email: 'test@example.com',
-      confidenceScore: undefined,
-      date: '2026-05-28',
-    });
-
-    const response = await POST(makeRequest());
-
-    expect(response.status).toBe(400);
-  });
-
-  it('returns 400 when confidenceScore is a non-numeric string', async () => {
-    authenticateRequest.mockResolvedValue({ uid: 'user-abc', email_verified: true });
-    parseJSON.mockResolvedValue({
-      userId: 'user-abc',
-      studentName: 'Test User',
-      email: 'test@example.com',
-      confidenceScore: 'high',
-      date: '2026-05-28',
-    });
-
-    const response = await POST(makeRequest());
-
-    expect(response.status).toBe(400);
-  });
-
-  it('returns 400 when confidenceScore exceeds 100', async () => {
-    authenticateRequest.mockResolvedValue({ uid: 'user-abc', email_verified: true });
-    parseJSON.mockResolvedValue({
-      userId: 'user-abc',
-      studentName: 'Test User',
-      email: 'test@example.com',
-      confidenceScore: 110,
-      date: '2026-05-28',
-    });
-
-    const response = await POST(makeRequest());
-
-    expect(response.status).toBe(400);
-  });
-
-  it('returns 200 with alreadyRecorded: true when doc already exists', async () => {
-=======
   it("returns 400 when confidenceScore is missing (undefined)", async () => {
->>>>>>> origin/master
     authenticateRequest.mockResolvedValue({
       uid: "user-abc",
       email_verified: true,
     });
     parseJSON.mockResolvedValue({
-<<<<<<< HEAD
-      userId: 'user-abc',
-      studentName: 'Test User',
-      email: 'test@learnova.edu',
-=======
       userId: "user-abc",
       studentName: "Test User",
       email: "test@example.com",
@@ -286,7 +232,6 @@ describe("Attendance Record API Route — POST /api/attendance/record", () => {
       userId: "user-abc",
       studentName: "Test User",
       email: "test@learnova.edu",
->>>>>>> origin/master
       confidenceScore: 85,
       date: "2026-05-28",
     });
@@ -311,15 +256,9 @@ describe("Attendance Record API Route — POST /api/attendance/record", () => {
       email_verified: true,
     });
     parseJSON.mockResolvedValue({
-<<<<<<< HEAD
-      userId: 'user-abc',
-      studentName: 'Test User',
-      email: 'test@learnova.edu',
-=======
       userId: "user-abc",
       studentName: "Test User",
       email: "test@learnova.edu",
->>>>>>> origin/master
       confidenceScore: 85,
       date: "2026-05-28",
     });
@@ -383,15 +322,9 @@ describe("Attendance Record API Route — POST /api/attendance/record", () => {
       email_verified: true,
     });
     parseJSON.mockResolvedValue({
-<<<<<<< HEAD
-      userId: 'student-456',
-      studentName: 'Jane Doe',
-      email: 'jane@example.com',
-=======
       userId: "student-456",
       studentName: "Jane Doe",
       email: "jane@example.com",
->>>>>>> origin/master
       confidenceScore: 90,
       date: "2026-05-28",
     });
