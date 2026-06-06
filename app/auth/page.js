@@ -108,7 +108,9 @@ function AuthPageContent() {
       }
 
       if (result.needsVerification) {
-        toast.success("Verification email sent! Please check your inbox.");
+        toast.error(
+          "Your email is not verified. Please verify your email to continue."
+        );
         setShowRoleSelection(true);
         router.push("/verify");
       } else if (result.needsProfile) {
