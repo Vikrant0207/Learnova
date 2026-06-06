@@ -54,7 +54,6 @@ export default function UniversalProfile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isProfileDirty, setIsProfileDirty] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const isMounted = useIsMounted();
 
@@ -693,7 +692,7 @@ export default function UniversalProfile() {
                         variant="outline"
                         onClick={() => {
                           setIsEditing(false);
-                          setIsProfileDirty(false);
+                          reset();
                         }}
                       >
                         <X className="w-4 h-4 mr-2" />
