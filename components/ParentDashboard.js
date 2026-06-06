@@ -40,8 +40,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiFetch } from "@/lib/apiClient";
 import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 import { Navbar } from "./Navbar";
+import { dashboardContentOffsetClass } from "@/components/navigation";
 import { exportToCSV, exportToPDF } from "@/utils/exportUtils";
 import ExportDropdown from "@/components/ui/ExportDropdown";
+import dynamic from "next/dynamic";
+
+const ParentAchievementsPanel = dynamic(
+  () => import("@/components/achievements/ParentAchievementsPanel"),
+  { ssr: false, loading: () => <DashboardSkeleton /> }
+);
 
 const ParentDashboard = () => {
   const { user, userProfile } = useAuth();
@@ -282,7 +289,7 @@ const ParentDashboard = () => {
 
   if (children.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white">
+      <div className={`min-h-screen bg-slate-950 text-white ${dashboardContentOffsetClass}`}>
         <Navbar />
         <div className="max-w-4xl mx-auto pt-32 px-6 text-center space-y-6">
           <div className="w-20 h-20 bg-pink-500/10 border border-pink-500/20 rounded-full flex items-center justify-center mx-auto text-pink-400">
@@ -319,7 +326,7 @@ const ParentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white pb-12">
+    <div className={`min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white pb-12 ${dashboardContentOffsetClass}`}>
       <Navbar />
 
       {/* Main Header / Child Selector */}
@@ -444,7 +451,7 @@ const ParentDashboard = () => {
       {/* Navigation Tabs */}
       <div className="max-w-7xl mx-auto px-6 mb-6">
         <div className="flex items-center gap-2 border-b border-white/10 pb-2 flex-wrap">
-          {["overview", "attendance", "academics", "notices"].map((tab) => (
+          {["overview", "attendance", "academics", "achievements", "notices"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -850,6 +857,16 @@ const ParentDashboard = () => {
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ACHIEVEMENTS TAB */}
+            {activeTab === "achievements" && (
+              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6 shadow-xl">
+                <ParentAchievementsPanel
+                  studentId={selectedChild?.uid}
+                  studentName={selectedChild?.name || "Child"}
+                />
               </div>
             )}
 
