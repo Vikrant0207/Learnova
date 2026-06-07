@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { auth, db } from "@/lib/firebaseConfig";
 import { onIdTokenChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -114,6 +115,8 @@ export const useAuth = () => {
   const refreshManagerRef = useRef(null);
   const unsubscribeSnapshotRef = useRef(null);
 
+  const isMounted = useIsMounted();
+
   const handleSessionExpired = useCallback(() => {
     if (!isMounted()) return;
     setSessionExpired(true);
@@ -140,6 +143,7 @@ export const useAuth = () => {
         );
         refreshManagerRef.current.start();
 
+<<<<<<< HEAD
         const userDocRef = doc(db, "users", firebaseUser.uid);
         unsubscribeSnapshotRef.current = onSnapshot(
           userDocRef,
@@ -156,6 +160,53 @@ export const useAuth = () => {
               await clearAuthSessionCookie();
               deleteCookie("authToken");
               deleteCookie("userRole");
+=======
+          // KEY FIX: set profileLoading=true BEFORE subscribing to Firestore
+          // so ProtectedRoute sees loading=true during the async window and
+          // never redirects an authenticated user with a pending profile fetch.
+          setProfileLoading(true);
+
+          refreshManagerRef.current = createTokenRefreshManager(
+            firebaseUser,
+            handleSessionExpired
+          );
+          refreshManagerRef.current.start();
+
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          unsubscribeSnapshotRef.current = onSnapshot(
+            userDocRef,
+            async (userDoc) => {
+              try {
+                if (userDoc.exists()) {
+                  const profileData = userDoc.data();
+                  setUserProfile(profileData);
+                  const token = await firebaseUser.getIdToken();
+                  setAuthTokenCookie(token);
+                  setCookie("userRole", profileData.role, 7);
+                } else {
+                  setUserProfile(null);
+                  deleteCookie("authToken");
+                  deleteCookie("userRole");
+                }
+              } catch (snapErr) {
+                console.error("Error in profile snapshot listener:", snapErr);
+                setError(snapErr.message);
+              } finally {
+                // Only flip profileLoading→false on the FIRST snapshot
+                if (!firstSnapshotReceivedRef.current) {
+                  firstSnapshotReceivedRef.current = true;
+                  setProfileLoading(false);
+                }
+              }
+            },
+            (snapError) => {
+              console.warn("Profile snapshot subscription error:", snapError.message);
+              setError("Failed to sync your profile data.");
+              if (!firstSnapshotReceivedRef.current) {
+                firstSnapshotReceivedRef.current = true;
+                setProfileLoading(false);
+              }
+>>>>>>> origin/master
             }
             setLoading(false);
           },

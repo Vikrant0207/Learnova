@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as jose from "jose";
 import { Redis } from "@upstash/redis";
 import { validateCsrfOriginAndReferer, validateCsrfRequest } from "@/lib/csrf";
+import getApiRouteRule from "@/lib/rbac-policy";
 
 let redisClient;
 
@@ -30,7 +31,21 @@ const CLOCK_TOLERANCE_SECONDS = 60;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX = 5;
 
+<<<<<<< HEAD
 // Dev-only in-memory fallback
+=======
+function getRedis() {
+  if (!redisClient) {
+    redisClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  return redisClient;
+}
+
+// Dev-only in-memory fallback (never used in production)
+>>>>>>> origin/master
 const devRateLimitMap = new Map();
 
 const AUTH_RATE_LIMITED_PATHS = [
@@ -43,11 +58,6 @@ const AUTH_RATE_LIMITED_PATHS = [
   "/api/auth/verify-otp",
 ];
 
-const PUBLIC_API_PATHS = [
-  "/api/auth/csrf",
-  "/api/auth/reset-password",
-  "/api/health",
-];
 const PUBLIC_PATHS = ["/activity", "/auth", "/verify"];
 
 function isAuthRoute(pathname) {
@@ -55,6 +65,7 @@ function isAuthRoute(pathname) {
 }
 
 async function rateLimit(ip, pathname, request) {
+<<<<<<< HEAD
   const cookies =
     typeof request.cookies?.get === "function"
       ? request.cookies
@@ -64,14 +75,30 @@ async function rateLimit(ip, pathname, request) {
     cookies.get("next-auth.session-token")?.value ||
     cookies.get("authToken")?.value ||
     "";
+=======
+  const cookies = typeof request.cookies?.get === "function" ? request.cookies : { get: () => undefined };
+  const sessionFingerprint = cookies.get("__Secure-next-auth.session-token")?.value
+    || cookies.get("next-auth.session-token")?.value
+    || cookies.get("authToken")?.value
+    || "";
+>>>>>>> origin/master
   const key = `ratelimit:auth:${ip}_${pathname}_${sessionFingerprint.slice(0, 16)}`;
   const limit = RATE_LIMIT_MAX;
   const windowMs = RATE_LIMIT_WINDOW_MS;
 
+<<<<<<< HEAD
   const redis = getRedisClient();
 
   if (redis) {
     try {
+=======
+  const hasRedis =
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (hasRedis) {
+    try {
+      const redis = getRedis();
+>>>>>>> origin/master
       const now = Date.now();
       const windowStart = now - windowMs;
 
@@ -85,8 +112,12 @@ async function rateLimit(ip, pathname, request) {
       const current = Number(count);
       if (current > limit) {
         const oldest = await redis.zrange(key, 0, 0, { withScores: true });
+<<<<<<< HEAD
         const resetTime =
           oldest.length >= 2 ? Number(oldest[1]) + windowMs : now + windowMs;
+=======
+        const resetTime = oldest.length >= 2 ? Number(oldest[1]) + windowMs : now + windowMs;
+>>>>>>> origin/master
         const retryAfter = Math.ceil((resetTime - now) / 1000);
         return { allowed: false, remaining: 0, retryAfter };
       }
@@ -94,11 +125,15 @@ async function rateLimit(ip, pathname, request) {
       return { allowed: true, remaining: limit - current };
     } catch (err) {
       console.error("[rate-limit] Upstash Redis error — denying request:", err);
+<<<<<<< HEAD
       return {
         allowed: false,
         remaining: 0,
         retryAfter: Math.ceil(windowMs / 1000),
       };
+=======
+      return { allowed: false, remaining: 0, retryAfter: Math.ceil(windowMs / 1000) };
+>>>>>>> origin/master
     }
   }
 
@@ -120,6 +155,7 @@ async function rateLimit(ip, pathname, request) {
   return { allowed: true, remaining: limit - entry.count };
 }
 
+<<<<<<< HEAD
 let lastCleanupTime = 0;
 function cleanupRateLimitMap() {
   try {
@@ -127,6 +163,22 @@ function cleanupRateLimitMap() {
     if (now - lastCleanupTime < 5 * 60 * 1000) return;
     lastCleanupTime = now;
     if (devRateLimitMap.size === 0) return;
+=======
+// Periodically clean up expired entries to prevent unbounded memory growth
+// This runs on every middleware invocation but only cleans every 5 minutes
+let lastCleanupTime = 0;
+
+function cleanupRateLimitMap() {
+  try {
+    const now = Date.now();
+
+    if (now - lastCleanupTime < 5 * 60 * 1000) return;
+
+    lastCleanupTime = now;
+
+    if (devRateLimitMap.size === 0) return;
+
+>>>>>>> origin/master
     for (const [key, entry] of devRateLimitMap.entries()) {
       if (now > entry.resetTime) {
         devRateLimitMap.delete(key);
@@ -136,6 +188,10 @@ function cleanupRateLimitMap() {
     // Cleanup failure must never crash the middleware
   }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
 // ─── CSP ──────────────────────────────────────────────────────────────────────
 
 function buildPageCsp(nonce) {
@@ -223,7 +279,45 @@ async function verifyIdToken(token) {
   }
 }
 
+<<<<<<< HEAD
 // ─── Middleware Main ─────────────────────────────────────────────────────────
+=======
+// ─── RBAC enforcement ────────────────────────────────────────────────────────
+
+function enforceApiRbac(pathname, isTokenValid, isEmailVerified, userRole) {
+  const rule = getApiRouteRule(pathname);
+
+  if (!rule) {
+    // Not an API route — no RBAC enforcement
+    return null;
+  }
+
+  if (rule.public) {
+    return null;
+  }
+
+  if (!isTokenValid) {
+    return { error: "Unauthorized", status: 401 };
+  }
+
+  if (!isEmailVerified) {
+    return { error: "Forbidden: Email not verified", status: 403 };
+  }
+
+  if (rule.roles && rule.roles.length > 0) {
+    if (!userRole) {
+      return { error: "Forbidden: No role assigned", status: 403 };
+    }
+    if (!rule.roles.includes(userRole)) {
+      return { error: "Forbidden: Role mismatch", status: 403 };
+    }
+  }
+
+  return null;
+}
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+>>>>>>> origin/master
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -272,6 +366,7 @@ export async function middleware(request) {
     request.cookies.get("authToken")?.value;
   let payload = authToken ? await verifyIdToken(authToken) : null;
 
+<<<<<<< HEAD
   if (
     pathname.startsWith("/api/") &&
     isUnsafeMethod &&
@@ -288,6 +383,189 @@ export async function middleware(request) {
     }
   }
 
+=======
+  let isTokenValid = false;
+  let isEmailVerified = false;
+  let userRole = null;
+
+  if (authToken) {
+    const payload = await verifyIdToken(authToken);
+    if (payload) {
+      isTokenValid = true;
+      isEmailVerified = !!payload.email_verified;
+      userRole = payload.role || null;
+    }
+  }
+
+  if (pathname.startsWith("/api/") && isUnsafeMethod) {
+    if (isTokenValid && pathname.startsWith("/api/")) {
+      const sessionId =
+        request.cookies.get("sessionId")?.value ||
+        request.headers.get("x-session-id");
+      if (sessionId) {
+        try {
+          const redis = getRedisClient();
+          if (redis) {
+            const exists = await redis.exists(`session:${sessionId}`);
+            if (exists !== 1) {
+              return NextResponse.json(
+                { error: "Session expired or terminated concurrently" },
+                { status: 401 }
+              );
+            }
+          }
+        } catch {
+          // Redis unavailable — continue without session validation
+        }
+      }
+    }
+
+    const tokenFromCookie = request.cookies.get("authToken")?.value || null;
+    if (tokenFromCookie) {
+      try {
+        validateCsrfOriginAndReferer(request);
+        validateCsrfRequest(request);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error.message || "Forbidden: invalid CSRF request" },
+          { status: error.statusCode || 403 }
+        );
+      }
+    }
+  }
+
+  const protectedDashboards = [
+    {
+      prefix: "/student",
+      apiPrefix: "/api/student",
+      role: "student",
+      defaultPath: "/student/dashboard",
+    },
+    {
+      prefix: "/teacher",
+      apiPrefix: "/api/teacher",
+      role: "teacher",
+      defaultPath: "/teacher/dashboard",
+    },
+    {
+      prefix: "/admin",
+      apiPrefix: "/api/admin",
+      role: "admin",
+      defaultPath: "/admin/dashboard",
+    },
+    {
+      prefix: "/institute",
+      apiPrefix: "/api/institute",
+      role: "institute",
+      defaultPath: "/institute/dashboard",
+    },
+    {
+      prefix: "/parent",
+      apiPrefix: "/api/parent",
+      role: "parent",
+      defaultPath: "/parent/dashboard",
+    },
+  ];
+
+  const matchedDashboard = protectedDashboards.find(
+    (dashboard) =>
+      pathname.startsWith(dashboard.prefix) ||
+      (dashboard.apiPrefix && pathname.startsWith(dashboard.apiPrefix))
+  );
+
+  // ── 2. RBAC enforcement for all API routes ──
+  // This runs before handler execution, enforcing the centralized policy
+  // defined in API_ROUTE_RULES. Fail-closed: unmatched paths default to
+  // authenticated access.
+  if (pathname.startsWith("/api/") && !matchedDashboard) {
+    const rbacResult = enforceApiRbac(pathname, isTokenValid, isEmailVerified, userRole);
+    if (rbacResult) {
+      return NextResponse.json(
+        { error: rbacResult.error },
+        { status: rbacResult.status }
+      );
+    }
+  }
+
+  if (matchedDashboard) {
+    if (!isTokenValid) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL("/auth", request.url));
+    }
+    if (!isEmailVerified) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "Forbidden: Email not verified" },
+          { status: 403 }
+        );
+      }
+      return NextResponse.redirect(new URL("/verify", request.url));
+    }
+    if (userRole !== matchedDashboard.role) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "Forbidden: Role mismatch" },
+          { status: 403 }
+        );
+      }
+      const correctDashboard = protectedDashboards.find(
+        (d) => d.role === userRole
+      );
+      const redirectTarget = correctDashboard
+        ? correctDashboard.defaultPath
+        : "/profile";
+      return NextResponse.redirect(new URL(redirectTarget, request.url));
+    }
+  }
+
+  const generalProtectedRoutes = ["/profile", "/settings"];
+  const isGeneralProtected = generalProtectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isGeneralProtected) {
+    if (!isTokenValid) {
+      return NextResponse.redirect(new URL("/auth", request.url));
+    }
+    if (!isEmailVerified) {
+      return NextResponse.redirect(new URL("/verify", request.url));
+    }
+  }
+
+  if (pathname.startsWith("/verify")) {
+    if (!isTokenValid) {
+      return NextResponse.redirect(new URL("/auth", request.url));
+    }
+    if (isEmailVerified) {
+      const correctDashboard = protectedDashboards.find(
+        (d) => d.role === userRole
+      );
+      const redirectTarget = correctDashboard
+        ? correctDashboard.defaultPath
+        : "/profile";
+      return NextResponse.redirect(new URL(redirectTarget, request.url));
+    }
+  }
+
+  if (pathname === "/auth" && isTokenValid && isEmailVerified && userRole) {
+    const correctDashboard = protectedDashboards.find(
+      (d) => d.role === userRole
+    );
+    if (correctDashboard) {
+      return NextResponse.redirect(
+        new URL(correctDashboard.defaultPath, request.url)
+      );
+    }
+  }
+
+  const isPage =
+    !pathname.startsWith("/_next") &&
+    !pathname.startsWith("/api") &&
+    !pathname.match(/\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff2?|json)$/);
+
+>>>>>>> origin/master
   const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   // Baseline Security Headers

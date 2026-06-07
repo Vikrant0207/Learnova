@@ -197,10 +197,16 @@ const createPdfDownload = (notice) => {
 
   // ── FIX FOR ISSUE #2007: Safe text extraction and fallback ──
   const rawContent = notice.content || notice.text;
+<<<<<<< HEAD
   const safeContent =
     typeof rawContent === "string" && rawContent.trim().length > 0
       ? rawContent
       : "No text content provided for this notice.";
+=======
+  const safeContent = (typeof rawContent === "string" && rawContent.trim().length > 0)
+    ? rawContent
+    : "No text content provided for this notice.";
+>>>>>>> origin/master
   // ────────────────────────────────────────────────────────────
 
   const lines = doc.splitTextToSize(safeContent, contentWidth);
@@ -443,11 +449,18 @@ const NoticeCard = ({
             onClick={onToggleRead}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+<<<<<<< HEAD
             className={`inline-flex items-center gap-2 rounded-3xl border px-4 py-2 text-sm font-semibold transition active:scale-95 ${
               isRead
                 ? "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
                 : "border-indigo-500/40 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20"
             }`}
+=======
+            className={`inline-flex items-center gap-2 rounded-3xl border px-4 py-2 text-sm font-semibold transition active:scale-95 ${isRead
+              ? "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
+              : "border-indigo-500/40 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20"
+              }`}
+>>>>>>> origin/master
             aria-label={isRead ? "Mark notice unread" : "Mark notice read"}
           >
             {isRead ? (

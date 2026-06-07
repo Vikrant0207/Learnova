@@ -1,10 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
-import { requireRole } from "@/lib/rbac";
+import { requireRole, requireAuth } from "@/lib/rbac";
 import { connectDb } from "@/lib/mongodb";
 
 vi.mock("@/lib/rbac", () => ({
   requireRole: vi.fn(),
+  requireAuth: vi.fn(),
 }));
 
 vi.mock("@/lib/error-handler", () => ({
@@ -60,6 +61,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const db = await connectDb();
     db.collection().findOne.mockResolvedValue(null);
@@ -83,6 +85,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-other", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-other", role: "teacher" });
 
     const db = await connectDb();
     db.collection().findOne.mockResolvedValue({ ownerId: "teacher-original" });
@@ -103,6 +106,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "admin-1", role: "admin" },
       profile: { role: "admin" },
     });
+    requireAuth.mockResolvedValue({ uid: "admin-1", role: "admin" });
 
     const req = createMockRequest({
       courseId: "course-101",
@@ -123,6 +127,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const req = createMockRequest({
       courseId: "course-101",
@@ -142,6 +147,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const req = createMockRequest({ modules: [] });
 
@@ -153,6 +159,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const req = createMockRequest({
       courseId: "course-101",
@@ -167,6 +174,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const req = createMockRequest({
       courseId: "course-101",
@@ -181,6 +189,7 @@ describe("POST /api/courses/curriculum/sync", () => {
       payload: { uid: "teacher-1", role: "teacher" },
       profile: { role: "teacher" },
     });
+    requireAuth.mockResolvedValue({ uid: "teacher-1", role: "teacher" });
 
     const req = createMockRequest({
       courseId: "course-101",

@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export const GET = withErrorHandler(async (request) => {
-  await requireAdmin(request);
+  await requireAuth(request);
   initFirebaseAdmin();
   const db = getFirestore();
 
@@ -226,7 +226,7 @@ export const POST = withErrorHandler(async (request) => {
 });
 
 export const DELETE = withErrorHandler(async (request) => {
-  const { payload } = await requireAdmin(request);
+  const payload = await requireAuth(request);
   const url = new URL(request.url);
 
   const queryParams = {
