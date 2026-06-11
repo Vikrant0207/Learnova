@@ -197,16 +197,10 @@ const createPdfDownload = (notice) => {
 
   // ── FIX FOR ISSUE #2007: Safe text extraction and fallback ──
   const rawContent = notice.content || notice.text;
-<<<<<<< HEAD
   const safeContent =
     typeof rawContent === "string" && rawContent.trim().length > 0
       ? rawContent
       : "No text content provided for this notice.";
-=======
-  const safeContent = (typeof rawContent === "string" && rawContent.trim().length > 0)
-    ? rawContent
-    : "No text content provided for this notice.";
->>>>>>> origin/master
   // ────────────────────────────────────────────────────────────
 
   const lines = doc.splitTextToSize(safeContent, contentWidth);
@@ -449,18 +443,11 @@ const NoticeCard = ({
             onClick={onToggleRead}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-<<<<<<< HEAD
             className={`inline-flex items-center gap-2 rounded-3xl border px-4 py-2 text-sm font-semibold transition active:scale-95 ${
               isRead
                 ? "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
                 : "border-indigo-500/40 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20"
             }`}
-=======
-            className={`inline-flex items-center gap-2 rounded-3xl border px-4 py-2 text-sm font-semibold transition active:scale-95 ${isRead
-              ? "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
-              : "border-indigo-500/40 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20"
-              }`}
->>>>>>> origin/master
             aria-label={isRead ? "Mark notice unread" : "Mark notice read"}
           >
             {isRead ? (
@@ -560,6 +547,57 @@ const NoticeCard = ({
           </motion.span>
         ))}
       </motion.div>
+
+      {/* Attachments — feat #2184: rich media support */}
+      {notice.attachments?.length > 0 && (
+        <div className="mt-5 space-y-3">
+          <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold">
+            Attachments
+          </p>
+          {notice.attachments.map((att, i) => (
+            <div key={i}>
+{att.type === "link" ? (
+
+                  <a href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-sky-400 hover:underline break-all"
+                >
+                  🔗 {att.name}
+                </a>
+) : att.type?.startsWith("image/") ? (
+
+                  <a href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={att.url}
+                    alt={att.name}
+                    className="rounded-xl max-h-48 w-full object-cover border border-slate-700 hover:opacity-90 transition"
+                  />
+                </a>
+              ) : att.type === "application/pdf" ? (
+                <div className="rounded-xl overflow-hidden border border-slate-700">
+                  <iframe
+                    src={att.url}
+                    title={att.name}
+                    className="w-full h-48"
+                  />
+                  
+<a href={att.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 transition"
+                  >
+                    📄 {att.name} — Open PDF
+                  </a>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

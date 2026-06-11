@@ -417,8 +417,6 @@ export const resetPassword = async (email) => {
     };
   }
 };
-<<<<<<< HEAD
-=======
 /**
  * Initiates TOTP enrollment.
  * @param {Object} user - The authenticated Firebase user.
@@ -475,4 +473,3 @@ export const verifyTOTPSignIn = async (resolver, code) => {
   }
 };
 
->>>>>>> origin/master

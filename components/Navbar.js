@@ -259,186 +259,6 @@ export function Navbar() {
               {loading ? (
                 <div className="h-9 w-24 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
               ) : isAuthenticated ? (
-<<<<<<< HEAD
-                <div className="flex items-center gap-2 pl-2 border-l border-zinc-200/60 dark:border-white/8">
-                  {/* Notifications */}
-                  <div className="relative" ref={notifRef}>
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => {
-                        setIsNotificationOpen(!isNotificationOpen);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={iconBtn}
-                      aria-label="Notifications"
-                    >
-                      <Bell className="h-[18px] w-[18px]" />
-                      <AnimatePresence>
-                        {unreadCount > 0 && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="absolute top-1.5 right-1.5 bg-red-500 rounded-full h-2 w-2 ring-2 ring-white dark:ring-zinc-950"
-                          />
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {isNotificationOpen && (
-                        <motion.div
-                          variants={dropdownVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
-                          className={`${dropdownPanel} w-72`}
-                          style={glassPanelStyle}
-                        >
-                          <div className="px-4 py-3 border-b border-zinc-100/60 dark:border-white/6 flex justify-between items-center">
-                            <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                              Notifications
-                            </h3>
-                            {unreadCount > 0 && (
-                              <button
-                                onClick={markAllAsRead}
-                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                                aria-label="Action button"
-                              >
-                                Mark all read
-                              </button>
-                            )}
-                          </div>
-                          <div className="max-h-60 overflow-y-auto divide-y divide-zinc-100/50 dark:divide-white/5">
-                            {notifications.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-3.5 select-none">
-                                <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-full text-zinc-400 dark:text-zinc-500">
-                                  <BellOff className="h-6 w-6 stroke-[1.5]" />
-                                </div>
-                                <div className="space-y-1">
-                                  <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    You're all caught up!
-                                  </p>
-                                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[180px] leading-normal mx-auto">
-                                    No new notifications to display.
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              notifications.map((n) => (
-                                <div
-                                  key={n.id}
-                                  onClick={() => markAsRead(n.id)}
-                                  className={`p-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/4 transition-colors ${!n.read ? "bg-blue-50/30 dark:bg-blue-900/10" : ""}`}
-                                >
-                                  <p className="text-sm text-zinc-800 dark:text-zinc-200 line-clamp-2">
-                                    {n.message}
-                                  </p>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Profile Dropdown */}
-                  <div className="relative" ref={dropdownRef}>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => {
-                        setIsDropdownOpen(!isDropdownOpen);
-                        setIsNotificationOpen(false);
-                      }}
-                      className="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/6 border border-transparent hover:border-zinc-200/50 dark:hover:border-white/8 transition-all duration-200"
-                      aria-haspopup="true"
-                      aria-expanded={isDropdownOpen}
-                      aria-controls="profile-menu"
-                      aria-label="Toggle profile menu"
-                    >
-                      <div className="relative w-7 h-7 shrink-0">
-                        {getUserPhoto() && (
-                          <Image
-                            src={getUserPhoto()}
-                            alt={`${getUserDisplayName()} profile photo`}
-                            width={28}
-                            height={28}
-                            className="rounded-full object-cover ring-2 ring-blue-500/30"
-                            onError={handleImageError}
-                          />
-                        )}
-                        <div
-                          className="fallback-avatar absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold"
-                          style={{ display: getUserPhoto() ? "none" : "flex" }}
-                        >
-                          {getUserInitials(getUserDisplayName())}
-                        </div>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-emerald-400 rounded-full ring-2 ring-white dark:ring-zinc-950" />
-                      </div>
-
-                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 hidden md:inline max-w-[80px] truncate">
-                        {getUserDisplayName().split(" ")[0]}
-                      </span>
-                      <motion.span
-                        animate={{ rotate: isDropdownOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex"
-                      >
-                        <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
-                      </motion.span>
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {isDropdownOpen && (
-                        <motion.div
-                          id="profile-menu"
-                          role="menu"
-                          variants={dropdownVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
-                          className={`${dropdownPanel} w-52 py-1.5`}
-                          style={glassPanelStyle}
-                        >
-                          <div className="px-4 py-3 border-b border-zinc-100/60 dark:border-white/6">
-                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                              {getUserDisplayName()}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              {getUserRole()}
-                            </p>
-                          </div>
-                          {userMenuItems.map((item) => (
-                            <Link
-                              key={item.key}
-                              href={item.href}
-                              role="menuitem"
-                              onClick={() => setIsDropdownOpen(false)}
-                              className="flex items-center px-4 py-2.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors gap-2.5"
-                            >
-                              <item.icon className="h-4 w-4 text-zinc-400" />
-                              {item.label}
-                            </Link>
-                          ))}
-                          <div className="my-1 border-t border-zinc-100/60 dark:border-white/6" />
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={handleLogout}
-                            className="w-full flex items-center px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/8 transition-colors gap-2.5"
-                            aria-label="Action button"
-                          >
-                            <LogOut className="h-4 w-4" /> Logout
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-=======
                 <div className="flex items-center gap-2 border-l border-zinc-200/60 pl-2 dark:border-white/10">
                   <NotificationPanel
                     isOpen={isNotificationOpen}
@@ -460,7 +280,6 @@ export function Navbar() {
                     handleLogout={handleLogout}
                     handleImageError={handleImageError}
                   />
->>>>>>> origin/master
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -475,7 +294,7 @@ export function Navbar() {
                       size="default"
                       className="relative h-9 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all duration-200 hover:from-indigo-500 hover:to-violet-500"
                     >
-                      <Link href="/auth">
+                      <Link href="/auth?direct=true">
                         <span className="flex items-center gap-1.5">
                           Login <Sparkles className="h-3.5 w-3.5 text-indigo-200" />
                         </span>
@@ -493,7 +312,7 @@ export function Navbar() {
                       size="default"
                       className="relative h-9 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all duration-200 hover:from-indigo-500 hover:to-violet-500"
                     >
-                      <Link href="/auth?mode=signup">
+                      <Link href="/auth?mode=signup&direct=true">
                         <span className="flex items-center gap-1.5">
                           Sign Up <Sparkles className="h-3.5 w-3.5 text-indigo-200" />
                         </span>

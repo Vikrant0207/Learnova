@@ -3,14 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { auth, db } from "@/lib/firebaseConfig";
-import { onIdTokenChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
-import { getClientCsrfToken } from "@/lib/csrf";
-import { useIsMounted } from "./useIsMounted";
 
-/**
- * Cookie utility helpers for writing/deleting client cookies
- */
 const setCookie = (name, value, days = 7) => {
   if (typeof window !== "undefined") {
     const expires = new Date();
@@ -20,22 +15,10 @@ const setCookie = (name, value, days = 7) => {
   }
 };
 
-const syncAuthTokenCookie = async (token) => {
-  if (!token || typeof window === "undefined") return;
+const AUTH_TOKEN_COOKIE_DURATION_HOURS = 1;
 
-  await fetch("/api/auth/session", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(getClientCsrfToken() ? { "X-CSRF-Token": getClientCsrfToken() } : {}),
-    },
-    credentials: "same-origin",
-  }).catch((error) => {
-    console.warn(
-      "[useAuth] Failed to sync auth session cookie:",
-      error?.message
-    );
-  });
+const setAuthTokenCookie = (token) => {
+  setCookie("authToken", token, AUTH_TOKEN_COOKIE_DURATION_HOURS / 24);
 };
 
 const deleteCookie = (name) => {
@@ -45,75 +28,103 @@ const deleteCookie = (name) => {
   }
 };
 
-const clearAuthSessionCookie = async () => {
-  if (typeof window === "undefined") return;
-
-  await fetch("/api/auth/session", {
-    method: "DELETE",
-    headers: {
-      ...(getClientCsrfToken() ? { "X-CSRF-Token": getClientCsrfToken() } : {}),
-    },
-    credentials: "same-origin",
-  }).catch((error) => {
-    console.warn(
-      "[useAuth] Failed to clear auth session cookie:",
-      error?.message
-    );
-  });
-};
+const AUTH_SENSITIVE_CACHE_PATTERNS = [
+  /auth/i,
+  /user/i,
+  /session/i,
+  /token/i,
+  /profile/i,
+  /secure/i,
+];
 
 export const clearAuthSensitiveCaches = async () => {
   const cacheStorage = globalThis?.caches;
   if (!cacheStorage) return;
   try {
     const cacheKeys = await cacheStorage.keys();
-    const sensitive = [
-      /auth/i,
-      /user/i,
-      /session/i,
-      /token/i,
-      /profile/i,
-      /secure/i,
-    ];
-    const toDelete = cacheKeys.filter((key) =>
-      sensitive.some((p) => p.test(key))
+    const authCacheKeys = cacheKeys.filter((key) =>
+      AUTH_SENSITIVE_CACHE_PATTERNS.some((pattern) => pattern.test(key))
     );
-    await Promise.all(toDelete.map((key) => cacheStorage.delete(key)));
-  } catch {
-    // ignore
+    await Promise.all(authCacheKeys.map((key) => cacheStorage.delete(key)));
+  } catch (cacheErr) {
+    console.warn("Failed to clear auth-sensitive caches:", cacheErr);
   }
 };
 
+const MAX_REFRESH_RETRIES = 5;
+const REFRESH_INTERVAL_MS = 55 * 60 * 1000;
+
 function createTokenRefreshManager(firebaseUser, onSessionExpired) {
+  let consecutiveFailures = 0;
   let refreshTimer = null;
+
   async function attemptRefresh() {
     try {
       const freshToken = await firebaseUser.getIdToken(true);
-      await syncAuthTokenCookie(freshToken);
-    } catch {
-      if (onSessionExpired) onSessionExpired();
+      setAuthTokenCookie(freshToken);
+      consecutiveFailures = 0;
+    } catch (tokenError) {
+      consecutiveFailures++;
+      console.warn(
+        `[useAuth] Token refresh failed (attempt ${consecutiveFailures}/${MAX_REFRESH_RETRIES}):`,
+        tokenError?.message
+      );
+      if (consecutiveFailures >= MAX_REFRESH_RETRIES) {
+        console.error("[useAuth] Token refresh failed after max retries. Session may be expired.");
+        if (onSessionExpired) onSessionExpired();
+      }
     }
   }
+
   function start() {
     stop();
-    refreshTimer = setInterval(attemptRefresh, 55 * 60 * 1000);
+    refreshTimer = setInterval(attemptRefresh, REFRESH_INTERVAL_MS);
   }
+
   function stop() {
-    if (refreshTimer) clearInterval(refreshTimer);
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+    consecutiveFailures = 0;
   }
-  return { start, stop, refreshNow: attemptRefresh };
+
+  function refreshNow() {
+    return attemptRefresh();
+  }
+
+  return { start, stop, refreshNow };
 }
 
+/**
+ * Provides authentication state and user profile information.
+ *
+ * Fix for Issue #2181 — Race condition on hard refresh
+ * ─────────────────────────────────────────────────────
+ * Root cause: `loading` was set to false as soon as Firebase Auth resolved,
+ * before the first Firestore profile snapshot fired. ProtectedRoute saw
+ * (authenticated=true, profile=null, loading=false) and incorrectly
+ * redirected the user to /auth or /register.
+ *
+ * Fix: Split loading into two flags:
+ *   - firebaseLoading: true until onAuthStateChanged fires once
+ *   - profileLoading:  true from when a Firebase user is confirmed until
+ *                      the FIRST Firestore snapshot resolves
+ *
+ * The exported `loading` = firebaseLoading || profileLoading, so
+ * ProtectedRoute only makes redirect decisions after BOTH have resolved.
+ */
 export const useAuth = () => {
-  const isMounted = useIsMounted();
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [firebaseLoading, setFirebaseLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const refreshManagerRef = useRef(null);
   const unsubscribeSnapshotRef = useRef(null);
+  const firstSnapshotReceivedRef = useRef(false);
 
   const isMounted = useIsMounted();
 
@@ -125,42 +136,29 @@ export const useAuth = () => {
 
   useEffect(() => {
     if (!auth) {
-      setLoading(false);
+      setFirebaseLoading(false);
       return;
     }
 
-    const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
-      if (unsubscribeSnapshotRef.current) unsubscribeSnapshotRef.current();
-      if (refreshManagerRef.current) refreshManagerRef.current.stop();
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (unsubscribeSnapshotRef.current) {
+        unsubscribeSnapshotRef.current();
+        unsubscribeSnapshotRef.current = null;
+      }
+      if (refreshManagerRef.current) {
+        refreshManagerRef.current.stop();
+        refreshManagerRef.current = null;
+      }
 
+      firstSnapshotReceivedRef.current = false;
       setSessionExpired(false);
 
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        refreshManagerRef.current = createTokenRefreshManager(
-          firebaseUser,
-          handleSessionExpired
-        );
-        refreshManagerRef.current.start();
+      try {
+        if (firebaseUser) {
+          if (isMounted()) {
+            setUser(firebaseUser);
+          }
 
-<<<<<<< HEAD
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        unsubscribeSnapshotRef.current = onSnapshot(
-          userDocRef,
-          async (userDoc) => {
-            if (userDoc.exists()) {
-              setUserProfile(userDoc.data());
-              const token = await firebaseUser.getIdToken();
-              await syncAuthTokenCookie(token);
-              const idTokenResult = await firebaseUser.getIdTokenResult();
-              const claimsRole = idTokenResult.claims?.role;
-              if (claimsRole) setCookie("userRole", claimsRole, 7);
-            } else {
-              setUserProfile(null);
-              await clearAuthSessionCookie();
-              deleteCookie("authToken");
-              deleteCookie("userRole");
-=======
           // KEY FIX: set profileLoading=true BEFORE subscribing to Firestore
           // so ProtectedRoute sees loading=true during the async window and
           // never redirects an authenticated user with a pending profile fetch.
@@ -180,7 +178,7 @@ export const useAuth = () => {
                 if (userDoc.exists()) {
                   const profileData = userDoc.data();
                   setUserProfile(profileData);
-                  const token = await firebaseUser.getIdToken();
+                  const token = await firebaseUser.getIdToken(true); 
                   setAuthTokenCookie(token);
                   setCookie("userRole", profileData.role, 7);
                 } else {
@@ -206,57 +204,73 @@ export const useAuth = () => {
                 firstSnapshotReceivedRef.current = true;
                 setProfileLoading(false);
               }
->>>>>>> origin/master
             }
-            setLoading(false);
-          },
-          (snapError) => {
-            console.error("Profile snapshot error:", snapError);
-            setError("Failed to sync your profile data.");
-            setLoading(false);
-          }
-        );
-      } else {
+          );
+        } else {
+          setUser(null);
+          setUserProfile(null);
+          setProfileLoading(false);
+          deleteCookie("authToken");
+          deleteCookie("userRole");
+          await clearAuthSensitiveCaches();
+        }
+
+        if (isMounted()) setError(null);
+      } catch (err) {
+        setError(err.message);
         setUser(null);
         setUserProfile(null);
-        await clearAuthSessionCookie();
+        setProfileLoading(false);
         deleteCookie("authToken");
         deleteCookie("userRole");
-        await clearAuthSensitiveCaches();
-        setLoading(false);
+      } finally {
+        setFirebaseLoading(false);
       }
     });
 
     return () => {
       unsubscribeAuth();
-      if (unsubscribeSnapshotRef.current) unsubscribeSnapshotRef.current();
-      if (refreshManagerRef.current) refreshManagerRef.current.stop();
+      if (unsubscribeSnapshotRef.current) {
+        unsubscribeSnapshotRef.current();
+        unsubscribeSnapshotRef.current = null;
+      }
+      if (refreshManagerRef.current) {
+        refreshManagerRef.current.stop();
+        refreshManagerRef.current = null;
+      }
     };
   }, [handleSessionExpired]);
 
   const signOut = async () => {
     try {
-      if (refreshManagerRef.current) refreshManagerRef.current.stop();
-      await clearAuthSessionCookie();
+      if (refreshManagerRef.current) {
+        refreshManagerRef.current.stop();
+        refreshManagerRef.current = null;
+      }
       await firebaseSignOut(auth);
       setUser(null);
       setUserProfile(null);
       setSessionExpired(false);
+      deleteCookie("authToken");
       deleteCookie("userRole");
       await clearAuthSensitiveCaches();
     } catch (err) {
-      setError(err.message);
+      if (isMounted()) setError(err.message);
     }
   };
 
   const forceTokenRefresh = useCallback(async () => {
-    if (refreshManagerRef.current) await refreshManagerRef.current.refreshNow();
+    if (refreshManagerRef.current) {
+      await refreshManagerRef.current.refreshNow();
+    }
   }, []);
 
   return {
     user,
     userProfile,
-    loading,
+    // loading = true until BOTH Firebase Auth AND first Firestore snapshot
+    // have resolved — this is the core fix for issue #2181
+    loading: firebaseLoading || profileLoading,
     error,
     signOut,
     forceTokenRefresh,

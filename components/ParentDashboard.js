@@ -120,6 +120,14 @@ const ParentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const tabs = [
+    { id: "overview", label: "Overview", icon: TrendingUp },
+    { id: "child_progress", label: "Progress", icon: Activity },
+    { id: "attendance", label: "Attendance", icon: Calendar },
+    { id: "academics", label: "Academics", icon: BookOpen },
+    { id: "achievements", label: "Achievements", icon: Award },
+    { id: "notices", label: "Notices", icon: Bell },
+  ];
 
   // Linked children
   const [children, setChildren] = useState([]);
@@ -148,16 +156,21 @@ const ParentDashboard = () => {
     setLoading(true);
     try {
       const token = await user.getIdToken();
-      const data = await apiFetch("/api/parent/dashboard", {
+      const res = await apiFetch("/api/parent/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setChildren(data.students || []);
-      if (data.students && data.students.length > 0) {
-        setSelectedChild(data.students[0]);
+      if (res.ok) {
+        const data = await res.json();
+        setChildren(data.students || []);
+        if (data.students && data.students.length > 0) {
+          setSelectedChild(data.students[0]);
+        }
+      } else {
+        toast.error("Failed to load portal data");
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.message || "Error loading dashboard data");
+      toast.error("Error loading dashboard data");
     } finally {
       setLoading(false);
     }
@@ -175,7 +188,7 @@ const ParentDashboard = () => {
       try {
         const token = await user.getIdToken();
 
-        const [attData, gradesData, noticesData] = await Promise.all([
+        const [attRes, gradesRes, noticesRes] = await Promise.all([
           apiFetch(`/api/parent/student/${childId}/attendance`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
@@ -187,14 +200,17 @@ const ParentDashboard = () => {
           }),
         ]);
 
-        if (attData) {
-          setAttendance(attData);
+        if (attRes.ok) {
+          const data = await attRes.json();
+          setAttendance(data);
         }
-        if (gradesData) {
-          setGrades(gradesData.grades || []);
+        if (gradesRes.ok) {
+          const data = await gradesRes.json();
+          setGrades(data.grades || []);
         }
-        if (noticesData) {
-          setNotices(noticesData.notices || []);
+        if (noticesRes.ok) {
+          const data = await noticesRes.json();
+          setNotices(data.notices || []);
         }
       } catch (err) {
         console.error(err);
@@ -373,7 +389,7 @@ const ParentDashboard = () => {
 
   if (children.length === 0) {
     return (
-
+      <>
         <Navbar />
         <div className="max-w-4xl mx-auto pt-32 px-6 text-center space-y-6">
           <div className="w-20 h-20 bg-pink-500/10 border border-pink-500/20 rounded-full flex items-center justify-center mx-auto text-pink-400">
@@ -391,20 +407,16 @@ const ParentDashboard = () => {
             <button
               onClick={fetchDashboardData}
               className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-semibold py-2.5 px-6 rounded-xl transition shadow-lg flex items-center gap-2 mx-auto"
-<<<<<<< HEAD
-              aria-label="Action button"
-=======
               aria-label="Refresh Portal"
->>>>>>> origin/master
             >
               <RefreshCw className="w-4 h-4" />
               Refresh Portal
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+    </>
+  );
+}
 
   const getAttendanceRateColor = (rate) => {
     if (rate >= 85) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
@@ -419,6 +431,7 @@ const ParentDashboard = () => {
   };
 
   return (
+      <>
 
       <Navbar />
 
@@ -477,75 +490,6 @@ const ParentDashboard = () => {
         </motion.div>
       </div>
 
-<<<<<<< HEAD
-      {/* Threshold Modal */}
-      {showThresholdModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-white/15 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-pink-400" />
-              Configure Warning Threshold
-            </h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Set the minimum required attendance percentage for your child. A
-              warning alert will be shown whenever attendance falls below this
-              level.
-            </p>
-            <div className="space-y-2">
-              <div className="flex justify-between font-mono text-sm">
-                <span>Threshold Rate:</span>
-                <span className="font-bold text-pink-400">
-                  {tempThreshold}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="95"
-                step="5"
-                value={tempThreshold}
-                onChange={(e) => setTempThreshold(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500"
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowThresholdModal(false)}
-                className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-xl transition text-sm text-slate-400 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveThreshold}
-                className="px-5 py-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 rounded-xl transition text-sm font-semibold shadow-lg shadow-pink-500/10 text-white"
-                aria-label="Action button"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Low Attendance Alert */}
-      {selectedChild && childAttendancePercentage < threshold && (
-        <div className="max-w-7xl mx-auto mb-6 px-6">
-          <div className="bg-gradient-to-r from-red-950/40 via-red-900/35 to-slate-950 border border-red-500/30 rounded-3xl p-5 shadow-2xl flex items-center gap-4 animate-pulse">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-400 border border-red-500/20 flex-shrink-0">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-red-400 font-bold text-sm">
-                Low Attendance Warning
-              </h4>
-              <p className="text-xs text-slate-300 mt-1">
-                {selectedChild.name}'s attendance has dropped to{" "}
-                <span className="font-bold text-red-300">
-                  {childAttendancePercentage}%
-                </span>
-                , which is below the configured threshold of {threshold}%.
-                Please review check-ins.
-=======
       {/* ── Configurable Warning Threshold Modal ── */}
       <AnimatePresence>
         {showThresholdModal && (
@@ -562,7 +506,6 @@ const ParentDashboard = () => {
               </h3>
               <p className="text-sm text-slate-400 leading-relaxed">
                 Set a customized threshold for child attendance. An automatic alert triggers when the cumulative percentage drops below this setting.
->>>>>>> origin/master
               </p>
               <div className="space-y-3">
                 <div className="flex justify-between font-mono text-sm">
@@ -627,7 +570,7 @@ const ParentDashboard = () => {
       {/* ── Tab Switcher Menu ── */}
       <div className="max-w-7xl mx-auto px-6 mb-8">
         <div className="flex items-center gap-2 border-b border-white/10 pb-2 flex-wrap">
-
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -770,7 +713,7 @@ const ParentDashboard = () => {
                           No attendance history found.
                         </div>
                       ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                           <AreaChart data={attendanceChartData}>
                             <defs>
                               <linearGradient id="colorAttTrend" x1="0" y1="0" x2="0" y2="1">
@@ -820,7 +763,7 @@ const ParentDashboard = () => {
                           No academic records available.
                         </div>
                       ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                           <BarChart data={gradesChartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" />
                             <XAxis dataKey="subject" stroke="#94a3b8" fontSize={9} />
@@ -1309,7 +1252,7 @@ const ParentDashboard = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

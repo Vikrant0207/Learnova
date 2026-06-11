@@ -135,16 +135,6 @@ export async function recordAttendance({
       }),
     });
   } catch (error) {
-<<<<<<< HEAD
-    // If it's a network error, Workbox Background Sync has queued the request
-    if (
-      error.message.includes("Failed to fetch") ||
-      error.name === "TypeError"
-    ) {
-      console.warn(
-        "Network error during attendance submission. Workbox will sync later."
-      );
-=======
     if (error.message.includes("Failed to fetch") || error.name === "TypeError") {
       console.warn("Network error during attendance submission. Queuing to IndexedDB.");
       await queueOfflineAttendance({
@@ -154,7 +144,6 @@ export async function recordAttendance({
         confidenceScore: confidenceScore ?? 0,
         date: todayKey,
       });
->>>>>>> origin/master
       return {
         alreadyRecorded: false,
         newRate: null,
