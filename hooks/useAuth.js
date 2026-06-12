@@ -126,17 +126,7 @@ export const useAuth = () => {
   const unsubscribeSnapshotRef = useRef(null);
   const firstSnapshotReceivedRef = useRef(false);
 
-<<<<<<< HEAD
-  const isMountedRef = useRef(true);
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-  const isMounted = useCallback(() => isMountedRef.current, []);
-=======
   const isMounted = useIsMounted();
->>>>>>> upstream/master
 
   const handleSessionExpired = useCallback(() => {
     if (!isMounted()) return;
